@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+
+import './models/gas_client.dart';
 
 void main() {
   runApp(const MyApp());
@@ -60,43 +61,24 @@ class _MyHomePageState extends State<MyHomePage> {
   final String refreshToken =
       '1//04XRNXaZDiVi0CgYIARAAGAQSNwF-L9Ir9VhSIX3NuGEv6q2cbtfaYmwbPapfd815IMEjnfgRBMdMm4HaACuuvbVAL2Fui8ftT34';
   final String apiUrl =
-      //'https://script.googleapis.com/v1/scripts/AKfycbzTA-MiqzQ9DIpfRV46cjXVTHcALM8OQRfTqdpr8NjwBADEaTlwunYDKO2N9Qj0_OQI:run';
       'https://script.googleapis.com/v1/scripts/AKfycbwOUlUOHl8HBbZDGdO5MOOBA95Dcv3YKPOBNtg9uRHhpbmYpzX3W0TqFvQikJJ1tBPH:run';
+
+  final String _defaultSheetName = 'シート1';
   late List<Widget> _textList;
+
+  late GasClient gasClient;
 
   @override
   void initState() {
     super.initState();
     _textList = <Widget>[];
+    gasClient =
+        GasClient(clientId, clientSecret, refreshToken, tokenUrl, apiUrl);
   }
 
   Future<void> _doGet() async {
     print('doGet');
-
-    Uri uri = Uri.parse(apiUrl);
-    var accessToken = await _getAccessToken();
-
-    final body = json.encode({
-      'function': 'doGet',
-      'parameters': {
-        'sheet': 'シート1',
-      }
-    });
-
-    Map<String, String> headers = {
-      //'Access-Control-Allow-Origin': '*',
-      //'Content-Type': 'application/x-www-form-urlencoded',
-      //'crossDomain': 'true'
-      //'Access-Control-Allow-Methods': 'POST, GET'
-      'Authorization': 'Bearer $accessToken',
-    };
-
-    http.Response response = await http.post(uri, headers: headers, body: body);
-    var data = json.decode(response.body);
-    print(data);
-    String result = data['response']['result'];
-    var jsonResult = json.decode(result);
-    print(jsonResult);
+    var jsonResult = await gasClient.doGet();
 
     setState(() {
       print('response');
@@ -107,61 +89,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _doPost() async {
-    Uri uri = Uri.parse(apiUrl);
-    var accessToken = await _getAccessToken();
-
-    final body = json.encode({
-      'function': 'doPost',
-      'parameters': {
-        'sheet': 'シート1',
-        'postData': {
-          'task': '1',
-          'status': '2',
-          'etc': '3',
+    var jsonResult = await gasClient.doPost(_defaultSheetName);
+    print(jsonResult);
+    setState(() {
+      _textList.add(SelectableText(json.encode(jsonResult)));
+      /*
+      jsonResult.forEach((element) {
+        if (!element.isNull) {
+          _textList.add(SelectableText(element.toString()));
         }
-      }
-    });
-
-    Map<String, String> headers = {
-      'Authorization': 'Bearer $accessToken',
-    };
-
-    http.Response response = await http.post(uri, headers: headers, body: body);
-    Map data = json.decode(response.body);
-    print(data);
-    try {
-      String result = data['response']['result'];
-      var jsonResult = json.decode(result);
-      print(jsonResult);
-      setState(() {
-        jsonResult.forEach((element) {
-          if (!element.isNull) {
-            _textList.add(SelectableText(element.toString()));
-          }
-        });
       });
-    } catch (e) {
-      print(e);
-      setState(() {
-        _textList.add(SelectableText(e.toString()));
-      });
-    }
-  }
-
-  Future<dynamic> _getAccessToken() async {
-    Map<String, String> headers = {'content-type': 'application/json'};
-    String body = json.encode({
-      'client_id': clientId,
-      'client_secret': clientSecret,
-      'refresh_token': refreshToken,
-      'grant_type': 'refresh_token',
+      */
     });
-
-    http.Response response =
-        await http.post(Uri.parse(tokenUrl), headers: headers, body: body);
-    var data = jsonDecode(response.body);
-    var accessToken = data['access_token'];
-    return accessToken;
   }
 
   @override
