@@ -1,45 +1,41 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'package:intl/intl.dart';
-
-import './attend_data.dart';
-
 class GasClient {
-  late String clientId;
-  late String clientSecret;
-  late String refreshToken;
-  late String tokenUrl;
-  late String apiUrl;
+  late String _clientId;
+  late String _clientSecret;
+  late String _refreshToken;
+  late String _tokenUrl;
+  late String _apiUrl;
 
-  GasClient(this.clientId, this.clientSecret, this.refreshToken, this.tokenUrl,
-      this.apiUrl);
+  GasClient(this._clientId, this._clientSecret, this._refreshToken,
+      this._tokenUrl, this._apiUrl);
 
   Future<dynamic> _getAccessToken() async {
     Map<String, String> headers = {'content-type': 'application/json'};
     String body = json.encode({
-      'client_id': clientId,
-      'client_secret': clientSecret,
-      'refresh_token': refreshToken,
+      'client_id': _clientId,
+      'client_secret': _clientSecret,
+      'refresh_token': _refreshToken,
       'grant_type': 'refresh_token',
     });
 
     http.Response response =
-        await http.post(Uri.parse(tokenUrl), headers: headers, body: body);
+        await http.post(Uri.parse(_tokenUrl), headers: headers, body: body);
     var data = jsonDecode(response.body);
     var accessToken = data['access_token'];
     return accessToken;
   }
 
-  Future<dynamic> doGet() async {
+  Future<dynamic> get(String sheetName) async {
     var accessToken = await _getAccessToken();
 
-    Uri uri = Uri.parse(apiUrl);
+    Uri uri = Uri.parse(_apiUrl);
 
     final body = json.encode({
       'function': 'doGet',
       'parameters': {
-        'sheet': 'シート1',
+        'sheet': sheetName,
       }
     });
 
@@ -55,21 +51,25 @@ class GasClient {
     return jsonResult;
   }
 
-  Future<dynamic> doPost(String sheetName) async {
-    Uri uri = Uri.parse(apiUrl);
+  Future<dynamic> post(Object postData) async {
+    Uri uri = Uri.parse(_apiUrl);
     var accessToken = await _getAccessToken();
 
+/*
+    String name = '八木';
     DateTime now = DateTime.now();
     DateFormat outputFormat = DateFormat('yyyy/MM/dd hh:mm:ss');
     String time = outputFormat.format(now);
     print(time);
 
-    AttendData attendData = AttendData(1, now, AttendType.clockIn, now);
+    AttendData attendData = AttendData(1, name, now, AttendType.clockIn, now);
     Map<String, String> jsonObj = attendData.toJson();
+    */
 
     final body = json.encode({
       'function': 'doPost',
-      'parameters': {'sheet': sheetName, 'postData': jsonObj}
+      'parameters': postData,
+      //'parameters': {'sheet': sheetName, 'postData': jsonObj}
     });
 
     print(body);
