@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import './models/gas_client.dart';
+import 'services/gas_client.dart';
+import 'services/attendance_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -63,22 +64,24 @@ class _MyHomePageState extends State<MyHomePage> {
   final String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbwOUlUOHl8HBbZDGdO5MOOBA95Dcv3YKPOBNtg9uRHhpbmYpzX3W0TqFvQikJJ1tBPH:run';
 
-  final String _defaultSheetName = 'シート1';
+  final String _defaultSheetName = '八木';
   late List<Widget> _textList;
 
-  late GasClient gasClient;
+  late GasClient _gasClient;
+  late AttendanceService _attendanceService;
 
   @override
   void initState() {
     super.initState();
     _textList = <Widget>[];
-    gasClient =
+    _gasClient =
         GasClient(clientId, clientSecret, refreshToken, tokenUrl, apiUrl);
+    _attendanceService = AttendanceService(_gasClient);
   }
 
-  Future<void> _doGet() async {
+  Future<void> _get() async {
     print('doGet');
-    var jsonResult = await gasClient.doGet();
+    var jsonResult = await _attendanceService.getData();
 
     setState(() {
       print('response');
@@ -88,8 +91,25 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _doPost() async {
-    var jsonResult = await gasClient.doPost(_defaultSheetName);
+  Future<void> _clockIn() async {
+    var jsonResult = await _attendanceService.clockIn();
+    //var jsonResult = await _gasClient.doPost(_defaultSheetName);
+    print(jsonResult);
+    setState(() {
+      _textList.add(SelectableText(json.encode(jsonResult)));
+      /*
+      jsonResult.forEach((element) {
+        if (!element.isNull) {
+          _textList.add(SelectableText(element.toString()));
+        }
+      });
+      */
+    });
+  }
+
+  Future<void> _clockOut() async {
+    var jsonResult = await _attendanceService.clockOut();
+    //var jsonResult = await _gasClient.doPost(_defaultSheetName);
     print(jsonResult);
     setState(() {
       _textList.add(SelectableText(json.encode(jsonResult)));
@@ -128,10 +148,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: _textList)),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           FloatingActionButton(
-            onPressed: _doGet,
+            onPressed: _get,
             child: const Text('GET'),
           ),
-          FloatingActionButton(onPressed: _doPost, child: const Text('POST'))
+          FloatingActionButton(onPressed: _clockIn, child: const Text('出勤')),
+          FloatingActionButton(onPressed: _clockOut, child: const Text('退勤'))
         ]),
       ])),
     );
