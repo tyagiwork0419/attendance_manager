@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'models/attend_data.dart';
 import 'services/gas_client.dart';
 import 'services/attendance_service.dart';
 
@@ -62,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final String refreshToken =
       '1//04XRNXaZDiVi0CgYIARAAGAQSNwF-L9Ir9VhSIX3NuGEv6q2cbtfaYmwbPapfd815IMEjnfgRBMdMm4HaACuuvbVAL2Fui8ftT34';
   final String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbwOUlUOHl8HBbZDGdO5MOOBA95Dcv3YKPOBNtg9uRHhpbmYpzX3W0TqFvQikJJ1tBPH:run';
+      'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
 
   final String _defaultSheetName = '八木';
   late List<Widget> _textList;
@@ -70,9 +71,17 @@ class _MyHomePageState extends State<MyHomePage> {
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
+  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 30);
+
+  final List<String> nameList = <String>['八木', '大滝'];
+  late String dropdownValue;
+  late TimeOfDay selectedTime;
+
   @override
   void initState() {
     super.initState();
+    dropdownValue = nameList.first;
+    selectedTime = TimeOfDay.now();
     _textList = <Widget>[];
     _gasClient =
         GasClient(clientId, clientSecret, refreshToken, tokenUrl, apiUrl);
@@ -81,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _get() async {
     print('doGet');
-    var jsonResult = await _attendanceService.getData();
+    var jsonResult = await _attendanceService.getData(dropdownValue);
 
     setState(() {
       print('response');
@@ -92,35 +101,51 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _clockIn() async {
-    var jsonResult = await _attendanceService.clockIn();
+    var jsonResult = await _attendanceService.clockIn(
+        dropdownValue, DateTime.now(), AttendType.clockIn);
     //var jsonResult = await _gasClient.doPost(_defaultSheetName);
     print(jsonResult);
     setState(() {
       _textList.add(SelectableText(json.encode(jsonResult)));
-      /*
-      jsonResult.forEach((element) {
-        if (!element.isNull) {
-          _textList.add(SelectableText(element.toString()));
-        }
-      });
-      */
     });
   }
 
   Future<void> _clockOut() async {
-    var jsonResult = await _attendanceService.clockOut();
-    //var jsonResult = await _gasClient.doPost(_defaultSheetName);
+    var jsonResult = await _attendanceService.clockIn(
+        dropdownValue, DateTime.now(), AttendType.clockOut);
     print(jsonResult);
     setState(() {
       _textList.add(SelectableText(json.encode(jsonResult)));
-      /*
-      jsonResult.forEach((element) {
-        if (!element.isNull) {
-          _textList.add(SelectableText(element.toString()));
-        }
-      });
-      */
     });
+  }
+
+  Future<void> _manualClockIn() async {
+    await _manualInput(AttendType.clockIn);
+  }
+
+  Future<void> _manualClockOut() async {
+    await _manualInput(AttendType.clockOut);
+  }
+
+  Future<void> _manualInput(AttendType type) async {
+    final TimeOfDay? picked = await showTimePicker(
+        context: context,
+        initialTime: selectedTime,
+        initialEntryMode: TimePickerEntryMode.dial);
+
+    if (picked != null) {
+      DateTime now = DateTime.now();
+      DateTime time =
+          DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+
+      var jsonResult =
+          await _attendanceService.clockIn(dropdownValue, time, type);
+      //var jsonResult = await _gasClient.doPost(_defaultSheetName);
+      print(jsonResult);
+      setState(() {
+        _textList.add(SelectableText(json.encode(jsonResult)));
+      });
+    }
   }
 
   @override
@@ -141,19 +166,71 @@ class _MyHomePageState extends State<MyHomePage> {
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.
           child: Column(children: [
-        SingleChildScrollView(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _textList)),
+        Padding(
+            padding: EdgeInsets.all(10),
+            child: SizedBox(
+                width: double.infinity,
+                height: 500,
+                child: Container(
+                  decoration: BoxDecoration(border: Border.all(width: 1)),
+                  child: SingleChildScrollView(
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _textList)),
+                ))),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          FloatingActionButton(
-            onPressed: _get,
-            child: const Text('GET'),
-          ),
-          FloatingActionButton(onPressed: _clockIn, child: const Text('出勤')),
-          FloatingActionButton(onPressed: _clockOut, child: const Text('退勤'))
+          SizedBox(
+              width: 200,
+              height: 100,
+              child: ElevatedButton(
+                onPressed: _get,
+                child: Text('GET', style: _buttonTextStyle),
+              )),
+          const SizedBox(width: 10),
+          SizedBox(
+              width: 200,
+              height: 100,
+              child: ElevatedButton(
+                  onPressed: _clockIn,
+                  child: Text('出勤', style: _buttonTextStyle))),
+          const SizedBox(width: 10),
+          SizedBox(
+              width: 200,
+              height: 100,
+              child: ElevatedButton(
+                  onPressed: _clockOut,
+                  child: Text('退勤', style: _buttonTextStyle))),
         ]),
+        const SizedBox(height: 10),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          SizedBox(
+              width: 200,
+              height: 100,
+              child: ElevatedButton(
+                  onPressed: _manualClockIn,
+                  child: Text('手動出勤', style: _buttonTextStyle))),
+          const SizedBox(width: 10),
+          SizedBox(
+              width: 200,
+              height: 100,
+              child: ElevatedButton(
+                  onPressed: _manualClockOut,
+                  child: Text('手動退勤', style: _buttonTextStyle))),
+        ]),
+        Padding(
+            padding: const EdgeInsets.all(10),
+            child: DropdownButton<String>(
+                value: dropdownValue,
+                items: nameList.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                      value: value, child: Text(value));
+                }).toList(),
+                onChanged: (String? value) {
+                  setState(() {
+                    dropdownValue = value!;
+                  });
+                }))
       ])),
     );
   }

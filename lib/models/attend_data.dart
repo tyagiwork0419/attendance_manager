@@ -3,12 +3,12 @@ import 'package:intl/intl.dart';
 enum AttendType { clockIn, clockOut }
 
 extension AttendTypeExtension on AttendType {
-  int get toInt {
+  String get toInt {
     switch (this) {
       case AttendType.clockIn:
-        return 1;
+        return '出勤';
       case AttendType.clockOut:
-        return 2;
+        return '退勤';
     }
   }
 }

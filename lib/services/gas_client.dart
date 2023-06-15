@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GasClient {
-  late String _clientId;
-  late String _clientSecret;
-  late String _refreshToken;
-  late String _tokenUrl;
-  late String _apiUrl;
+  late final String _clientId;
+  late final String _clientSecret;
+  late final String _refreshToken;
+  late final String _tokenUrl;
+  late final String _apiUrl;
+  final String _grantType = 'refresh_token';
 
   GasClient(this._clientId, this._clientSecret, this._refreshToken,
       this._tokenUrl, this._apiUrl);
@@ -17,7 +18,7 @@ class GasClient {
       'client_id': _clientId,
       'client_secret': _clientSecret,
       'refresh_token': _refreshToken,
-      'grant_type': 'refresh_token',
+      'grant_type': _grantType,
     });
 
     http.Response response =
@@ -27,16 +28,19 @@ class GasClient {
     return accessToken;
   }
 
-  Future<dynamic> get(String sheetName) async {
+  Future<dynamic> get(Object parameters) async {
     var accessToken = await _getAccessToken();
 
     Uri uri = Uri.parse(_apiUrl);
 
     final body = json.encode({
       'function': 'doGet',
+      'parameters': parameters
+      /*
       'parameters': {
         'sheet': sheetName,
       }
+      */
     });
 
     Map<String, String> headers = {
@@ -51,25 +55,13 @@ class GasClient {
     return jsonResult;
   }
 
-  Future<dynamic> post(Object postData) async {
+  Future<dynamic> post(Object parameters) async {
     Uri uri = Uri.parse(_apiUrl);
     var accessToken = await _getAccessToken();
 
-/*
-    String name = '八木';
-    DateTime now = DateTime.now();
-    DateFormat outputFormat = DateFormat('yyyy/MM/dd hh:mm:ss');
-    String time = outputFormat.format(now);
-    print(time);
-
-    AttendData attendData = AttendData(1, name, now, AttendType.clockIn, now);
-    Map<String, String> jsonObj = attendData.toJson();
-    */
-
     final body = json.encode({
       'function': 'doPost',
-      'parameters': postData,
-      //'parameters': {'sheet': sheetName, 'postData': jsonObj}
+      'parameters': parameters,
     });
 
     print(body);
