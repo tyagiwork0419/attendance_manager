@@ -25,7 +25,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String version = '0.0.1';
+  final String version = '0.0.0';
 
   final String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
@@ -189,7 +189,6 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Expanded(
                   child: SizedBox(
-                      width: 200,
                       height: 100,
                       child: ElevatedButton(
                           onPressed: _manualClockIn,
@@ -203,7 +202,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           child: Text('手動退勤', style: _buttonTextStyle)))),
             ]),
             Padding(
-                padding: const EdgeInsets.all(10),
+                padding: allPadding,
                 child: DropdownButton<String>(
                     value: dropdownValue,
                     items:
