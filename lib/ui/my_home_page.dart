@@ -25,6 +25,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final String version = '0.0.1';
+
+  final String apiUrl =
+      'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
+
   final String scope =
       'https://www.googleapis.com/auth/spreadsheets.currentonly';
   final String tokenUrl = 'https://oauth2.googleapis.com/token';
@@ -33,8 +38,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final String clientSecret = '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';
   final String refreshToken =
       '1//04XRNXaZDiVi0CgYIARAAGAQSNwF-L9Ir9VhSIX3NuGEv6q2cbtfaYmwbPapfd815IMEjnfgRBMdMm4HaACuuvbVAL2Fui8ftT34';
-  final String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
 
   late List<Widget> _textList;
 
@@ -46,6 +49,9 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<String> nameList = <String>['八木', '大滝'];
   late String dropdownValue;
   late TimeOfDay selectedTime;
+
+  final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(0,10,0,10);
+  final EdgeInsets allPadding = const EdgeInsets.all(10);
 
   @override
   void initState() {
@@ -132,13 +138,19 @@ class _MyHomePageState extends State<MyHomePage> {
           // the App.build method, and use it to set our appbar title.
           title: Text(widget.title),
         ),
-        body: SingleChildScrollView(
+        body: Padding(
+          padding: allPadding,
           child: Center(
               // Center is a layout widget. It takes a single child and positions it
               // in the middle of the parent.
-              child: Column(children: [
+              child: Column(
+                children: [
+                  Padding(padding: topBottomPadding,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('version: $version'))),
             Padding(
-                padding: EdgeInsets.all(10),
+                padding: topBottomPadding,
                 child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.5,
