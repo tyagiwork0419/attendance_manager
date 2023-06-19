@@ -38378,7 +38378,7 @@ return A.a1($async$mJ,r)},
 G(a){var s,r,q,p,o,n,m,l,k,j=this,i=null
 j.a.toString
 s=A.cw("\u52e4\u6020\u7ba1\u7406",i,i,i,i,i,i,i)
-r=A.cw("version: 0.0.0",i,i,i,i,i,i,i)
+r=A.cw("version: 0.0.1",i,i,i,i,i,i,i)
 q=A.Z(a,i,t.w).w
 p=A.ajb(B.l,1)
 o=j.z
