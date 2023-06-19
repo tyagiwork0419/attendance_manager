@@ -151,43 +151,44 @@ class _MyHomePageState extends State<MyHomePage> {
                               children: _textList)),
                     ))),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              SizedBox(
-                  width: 200,
-                  height: 100,
-                  child: ElevatedButton(
-                    onPressed: _get,
-                    child: Text('GET', style: _buttonTextStyle),
-                  )),
+              Expanded(
+                  child: SizedBox(
+                      height: 100,
+                      child: ElevatedButton(
+                        onPressed: _get,
+                        child: Text('GET', style: _buttonTextStyle),
+                      ))),
               const SizedBox(width: 10),
-              SizedBox(
-                  width: 200,
-                  height: 100,
-                  child: ElevatedButton(
-                      onPressed: _clockIn,
-                      child: Text('出勤', style: _buttonTextStyle))),
+              Expanded(
+                  child: SizedBox(
+                      height: 100,
+                      child: ElevatedButton(
+                          onPressed: _clockIn,
+                          child: Text('出勤', style: _buttonTextStyle)))),
               const SizedBox(width: 10),
-              SizedBox(
-                  width: 200,
-                  height: 100,
-                  child: ElevatedButton(
-                      onPressed: _clockOut,
-                      child: Text('退勤', style: _buttonTextStyle))),
+              Expanded(
+                  child: SizedBox(
+                      height: 100,
+                      child: ElevatedButton(
+                          onPressed: _clockOut,
+                          child: Text('退勤', style: _buttonTextStyle)))),
             ]),
             const SizedBox(height: 10),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              SizedBox(
-                  width: 200,
-                  height: 100,
-                  child: ElevatedButton(
-                      onPressed: _manualClockIn,
-                      child: Text('手動出勤', style: _buttonTextStyle))),
+              Expanded(
+                  child: SizedBox(
+                      width: 200,
+                      height: 100,
+                      child: ElevatedButton(
+                          onPressed: _manualClockIn,
+                          child: Text('手動出勤', style: _buttonTextStyle)))),
               const SizedBox(width: 10),
-              SizedBox(
-                  width: 200,
-                  height: 100,
-                  child: ElevatedButton(
-                      onPressed: _manualClockOut,
-                      child: Text('手動退勤', style: _buttonTextStyle))),
+              Expanded(
+                  child: SizedBox(
+                      height: 100,
+                      child: ElevatedButton(
+                          onPressed: _manualClockOut,
+                          child: Text('手動退勤', style: _buttonTextStyle)))),
             ]),
             Padding(
                 padding: const EdgeInsets.all(10),
