@@ -25,7 +25,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String version = '0.0.1';
+  final String version = '0.0.2';
 
   final String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
@@ -44,7 +44,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
-  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 30);
+  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 20);
 
   final List<String> nameList = <String>['八木', '大滝'];
   late String dropdownValue;
@@ -140,6 +140,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         body: Padding(
           padding: allPadding,
+          child: SingleChildScrollView(
           child: Center(
               // Center is a layout widget. It takes a single child and positions it
               // in the middle of the parent.
@@ -165,7 +166,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Expanded(
                   child: SizedBox(
-                      height: 100,
+                      height: 50,
                       child: ElevatedButton(
                         onPressed: _get,
                         child: Text('GET', style: _buttonTextStyle),
@@ -173,14 +174,14 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(width: 10),
               Expanded(
                   child: SizedBox(
-                      height: 100,
+                      height: 50,
                       child: ElevatedButton(
                           onPressed: _clockIn,
                           child: Text('出勤', style: _buttonTextStyle)))),
               const SizedBox(width: 10),
               Expanded(
                   child: SizedBox(
-                      height: 100,
+                      height: 50,
                       child: ElevatedButton(
                           onPressed: _clockOut,
                           child: Text('退勤', style: _buttonTextStyle)))),
@@ -189,14 +190,14 @@ class _MyHomePageState extends State<MyHomePage> {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               Expanded(
                   child: SizedBox(
-                      height: 100,
+                      height: 50,
                       child: ElevatedButton(
                           onPressed: _manualClockIn,
                           child: Text('手動出勤', style: _buttonTextStyle)))),
               const SizedBox(width: 10),
               Expanded(
                   child: SizedBox(
-                      height: 100,
+                      height: 50,
                       child: ElevatedButton(
                           onPressed: _manualClockOut,
                           child: Text('手動退勤', style: _buttonTextStyle)))),
@@ -216,6 +217,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       });
                     }))
           ])),
-        ));
+        )));
   }
 }
