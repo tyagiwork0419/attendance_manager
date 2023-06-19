@@ -38378,7 +38378,7 @@ return A.a1($async$mJ,r)},
 G(a){var s,r,q,p,o,n,m,l,k,j=this,i=null
 j.a.toString
 s=A.cw("\u52e4\u6020\u7ba1\u7406",i,i,i,i,i,i,i)
-r=A.cw("version: 0.0.1",i,i,i,i,i,i,i)
+r=A.cw("version: 0.0.0",i,i,i,i,i,i,i)
 q=A.Z(a,i,t.w).w
 p=A.ajb(B.l,1)
 o=j.z
@@ -38386,7 +38386,7 @@ o===$&&A.a()
 q=A.dz(A.fJ(i,A.ah4(A.eI(o,B.b7,B.dQ,B.Y),i,B.bS),B.r,i,i,new A.d2(i,i,p,i,i,i,B.ay),i,i,i,i,i,i,i),q.a.b*0.5,1/0)
 p=t.p
 o=A.hE(A.b([A.dH(A.dz(A.ED(A.cw("GET",i,i,i,B.eo,i,i,i),j.ga28(j)),100,i)),B.j5,A.dH(A.dz(A.ED(A.cw("\u51fa\u52e4",i,i,i,B.eo,i,i,i),j.gX5()),100,i)),B.j5,A.dH(A.dz(A.ED(A.cw("\u9000\u52e4",i,i,i,B.eo,i,i,i),j.gX6()),100,i))],p),B.ap,B.dQ,B.Y,i)
-n=A.hE(A.b([A.dH(A.dz(A.ED(A.cw("\u624b\u52d5\u51fa\u52e4",i,i,i,B.eo,i,i,i),j.ga1J()),100,200)),B.j5,A.dH(A.dz(A.ED(A.cw("\u624b\u52d5\u9000\u52e4",i,i,i,B.eo,i,i,i),j.ga1K()),100,i))],p),B.ap,B.dQ,B.Y,i)
+n=A.hE(A.b([A.dH(A.dz(A.ED(A.cw("\u624b\u52d5\u51fa\u52e4",i,i,i,B.eo,i,i,i),j.ga1J()),100,i)),B.j5,A.dH(A.dz(A.ED(A.cw("\u624b\u52d5\u9000\u52e4",i,i,i,B.eo,i,i,i),j.ga1K()),100,i))],p),B.ap,B.dQ,B.Y,i)
 m=j.ay
 m===$&&A.a()
 l=j.ax
