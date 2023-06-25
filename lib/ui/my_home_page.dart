@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/attend_data.dart';
 import '../services/gas_client.dart';
 import '../services/attendance_service.dart';
+import '../application/constants.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -25,19 +26,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String version = '0.0.2';
 
-  final String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycby1gGxnJF3V2GwXxZUPRg8EzvBkMKHJD5BUgl-ox1f1bmTHWhqiDTeZ10OkQh-a-ewW:run';
+  final sheetId = '2023年';
 
-  final String scope =
-      'https://www.googleapis.com/auth/spreadsheets.currentonly';
-  final String tokenUrl = 'https://oauth2.googleapis.com/token';
-  final String clientId =
-      '899530760082-skgo3k4sjv5la566sa598icfgdsusmgt.apps.googleusercontent.com';
-  final String clientSecret = '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';
-  final String refreshToken =
-      '1//04XRNXaZDiVi0CgYIARAAGAQSNwF-L9Ir9VhSIX3NuGEv6q2cbtfaYmwbPapfd815IMEjnfgRBMdMm4HaACuuvbVAL2Fui8ftT34';
+  
 
   late List<Widget> _textList;
 
@@ -60,16 +52,13 @@ class _MyHomePageState extends State<MyHomePage> {
     selectedTime = TimeOfDay.now();
     _textList = <Widget>[];
     _gasClient =
-        GasClient(clientId, clientSecret, refreshToken, tokenUrl, apiUrl);
+        GasClient(Constants.clientId, Constants.clientSecret, Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
   }
 
   Future<void> _get() async {
-    print('doGet');
-    var jsonResult = await _attendanceService.getData(dropdownValue);
-
+    var jsonResult = await _attendanceService.getData(sheetId, dropdownValue);
     setState(() {
-      print('response');
       jsonResult.forEach((element) {
         _textList.add(SelectableText(element.toString()));
       });
@@ -77,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _clockIn() async {
-    var jsonResult = await _attendanceService.clockIn(
+    var jsonResult = await _attendanceService.clockIn(sheetId, 
         dropdownValue, DateTime.now(), AttendType.clockIn);
     //var jsonResult = await _gasClient.doPost(_defaultSheetName);
     print(jsonResult);
@@ -87,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _clockOut() async {
-    var jsonResult = await _attendanceService.clockIn(
+    var jsonResult = await _attendanceService.clockIn(sheetId, 
         dropdownValue, DateTime.now(), AttendType.clockOut);
     print(jsonResult);
     setState(() {
@@ -115,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
           DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
 
       var jsonResult =
-          await _attendanceService.clockIn(dropdownValue, time, type);
+          await _attendanceService.clockIn(sheetId, dropdownValue, time, type);
       //var jsonResult = await _gasClient.doPost(_defaultSheetName);
       print(jsonResult);
       setState(() {
@@ -147,9 +136,9 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 children: [
                   Padding(padding: topBottomPadding,
-                  child: Align(
+                  child: const Align(
                     alignment: Alignment.centerRight,
-                    child: Text('version: $version'))),
+                    child: Text('version: ${Constants.version}'))),
             Padding(
                 padding: topBottomPadding,
                 child: SizedBox(
