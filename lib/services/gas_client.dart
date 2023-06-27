@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-
 class GasClient {
   late final String _clientId;
   late final String _clientSecret;
@@ -27,29 +26,28 @@ class GasClient {
 
     http.Response response =
         await http.post(Uri.parse(_tokenUrl), headers: headers, body: body);
-      
+
     print(response.statusCode);
 
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       var accessToken = data['access_token'];
       return accessToken;
-    }else{
+    } else {
       throw Exception('get access token error: ${response.body}');
     }
-    
   }
 
-  Future<dynamic> get(Object parameters) async {
-
+  Future<String> post(String functionName, Object parameters) async {
     var accessToken = await _getAccessToken();
 
     //oauth2.Client client = await oauth2.clientCredentialsGrant(Uri.parse(_tokenUrl), _clientId, _clientSecret);
-    
+
     Uri uri = Uri.parse(_apiUrl);
 
     final body = json.encode({
-      'function': 'select',
+      //'function': 'select',
+      'function': functionName,
       'parameters': parameters
     });
 
@@ -60,38 +58,13 @@ class GasClient {
 
     http.Response response = await http.post(uri, headers: headers, body: body);
 
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       var data = json.decode(response.body);
       print(data);
       String result = data['response']['result'];
-      var jsonResult = json.decode(result);
-      return jsonResult;
-
-    }else{
+      return result;
+    } else {
       throw Exception(response.body);
     }
-
-  }
-
-  Future<dynamic> post(Object parameters) async {
-    Uri uri = Uri.parse(_apiUrl);
-    var accessToken = await _getAccessToken();
-
-    final body = json.encode({
-      'function': 'insertRows',
-      'parameters': parameters,
-    });
-
-    print(body);
-
-    Map<String, String> headers = {
-      'Authorization': 'Bearer $accessToken',
-    };
-
-    http.Response response = await http.post(uri, headers: headers, body: body);
-    Map data = json.decode(response.body);
-    print(data);
-    var result = data['response'];
-    return result;
   }
 }
