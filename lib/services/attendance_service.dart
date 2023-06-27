@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'gas_client.dart';
 import '../models/attend_data.dart';
 
@@ -6,11 +7,10 @@ class AttendanceService {
 
   AttendanceService(this._gasClient);
 
-  Future<dynamic> clockIn(String fileName, String sheetName, DateTime time, AttendType type) async {
-    print('clock in');
-
-    AttendData attendData = AttendData(1, sheetName, type, time, Status.normal);
-    Map<String, String> jsonObj = attendData.toJson();
+  Future<List<AttendData>> setClock(
+      String fileName, String sheetName, AttendData data) async {
+    //AttendData attendData = AttendData(0, name, type, time, Status.normal);
+    Map<String, dynamic> jsonObj = data.toJson();
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
@@ -18,17 +18,49 @@ class AttendanceService {
     };
     print(parameters);
 
-    var jsonResult = await _gasClient.post(parameters);
-    return jsonResult;
+    var jsonResult = await _gasClient.post('insertRows', parameters);
+    print('jsonResult = $jsonResult');
+    var result = _parseFromJson(jsonResult);
+    return result;
   }
 
-  Future<dynamic> getData(String fileName, String sheetName) async {
+  //Future<List<AttendData>> getData(String fileName, String sheetName) async {
+  Future<List<AttendData>> getData(String fileName, String sheetName) async {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
     };
-    var jsonResult = await _gasClient.get(parameters);
+    var jsonResult = await _gasClient.post('selectByDate', parameters);
 
-    return jsonResult;
+    var result = _parseFromJson(jsonResult);
+    return result;
+  }
+
+  List<AttendData> _parseFromJson(String jsonResult) {
+    List<dynamic> jsonObj = json.decode(jsonResult);
+
+    List<AttendData> result = [];
+
+    for (int i = 0; i < jsonObj.length; ++i) {
+      var data = jsonObj[i];
+      var attendData = AttendData.fromJson(data);
+      result.add(attendData);
+    }
+    return result;
+  }
+
+  Future<List<AttendData>> updateStatusById(
+      String fileName, String sheetName, int id, String status) async {
+    Map<String, Object> parameters = {
+      'fileName': fileName,
+      'sheetName': sheetName,
+      'postData': {id: id, status: status},
+    };
+    print(parameters);
+
+    var jsonResult = await _gasClient.post('updateStatusById', parameters);
+    print('jsonResult = $jsonResult');
+    var result = _parseFromJson(jsonResult);
+    return result;
   }
 }
