@@ -12,7 +12,7 @@ class GasClient {
   GasClient(this._clientId, this._clientSecret, this._refreshToken,
       this._tokenUrl, this._apiUrl);
 
-  Future<dynamic> _getAccessToken() async {
+  Future<String> getAccessToken() async {
     print('get access token');
     Map<String, String> headers = {'content-type': 'application/json'};
     String body = json.encode({
@@ -31,15 +31,17 @@ class GasClient {
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
-      var accessToken = data['access_token'];
+      String accessToken = data['access_token'];
       return accessToken;
     } else {
       throw Exception('get access token error: ${response.body}');
     }
   }
 
-  Future<String> post(String functionName, Object parameters) async {
-    var accessToken = await _getAccessToken();
+  Future<String> post(
+      String functionName, String accessToken, Object parameters) async {
+    //var accessToken = await _getAccessToken();
+    accessToken = await getAccessToken();
 
     //oauth2.Client client = await oauth2.clientCredentialsGrant(Uri.parse(_tokenUrl), _clientId, _clientSecret);
 
@@ -60,7 +62,7 @@ class GasClient {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      print(data);
+      print('data = $data');
       String result = data['response']['result'];
       return result;
     } else {

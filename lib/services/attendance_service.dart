@@ -5,6 +5,8 @@ import '../models/attend_data.dart';
 class AttendanceService {
   final GasClient _gasClient;
 
+  String accessToken = '';
+
   AttendanceService(this._gasClient);
 
   Future<List<AttendData>> setClock(
@@ -18,7 +20,8 @@ class AttendanceService {
     };
     print(parameters);
 
-    var jsonResult = await _gasClient.post('insertRows', parameters);
+    var jsonResult =
+        await _gasClient.post('insertRows', accessToken, parameters);
     print('jsonResult = $jsonResult');
     var result = _parseFromJson(jsonResult);
     return result;
@@ -30,7 +33,9 @@ class AttendanceService {
       'fileName': fileName,
       'sheetName': sheetName,
     };
-    var jsonResult = await _gasClient.post('selectByDate', parameters);
+    //accessToken = await _gasClient.getAccessToken();
+    var jsonResult =
+        await _gasClient.post('selectByDate', accessToken, parameters);
 
     var result = _parseFromJson(jsonResult);
     return result;
@@ -54,11 +59,12 @@ class AttendanceService {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
-      'postData': {id: id, status: status},
+      'postData': {'id': id, 'status': status},
     };
     print(parameters);
 
-    var jsonResult = await _gasClient.post('updateStatusById', parameters);
+    var jsonResult =
+        await _gasClient.post('updateStatusById', accessToken, parameters);
     print('jsonResult = $jsonResult');
     var result = _parseFromJson(jsonResult);
     return result;

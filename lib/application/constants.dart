@@ -1,8 +1,8 @@
 class Constants {
-  static const String version = '0.0.3';
+  static const String version = '0.0.4';
 
   static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbybca2wwcxiUANNC2yhfXltgsQMmbBaBtkCjS6WukRKFi9Lhohu8GrEjttQ1ek3wBlO:run';
+      'https://script.googleapis.com/v1/scripts/AKfycbzbD2EI-G63Jkk9BwLV8yJNTnsQkIEcr0z_gDY--b9AIBXJSksTbGZRqg-Q8Vf27W_J:run';
   static const String tokenUrl = 'https://oauth2.googleapis.com/token';
 
   static const String clientId =
