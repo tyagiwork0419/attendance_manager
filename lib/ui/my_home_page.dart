@@ -8,17 +8,11 @@ import '../services/gas_client.dart';
 import '../services/attendance_service.dart';
 import '../application/constants.dart';
 
+import 'datetime_picker_dialog.dart';
+import 'delete_dialog.dart';
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -34,9 +28,17 @@ class _MyHomePageState extends State<MyHomePage> {
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
-  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 20);
+  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 15);
 
-  final List<String> nameList = <String>['八木', '大滝', '山本', '広瀬', '坂下', '西本'];
+  final List<String> nameList = <String>[
+    'test',
+    '八木',
+    '大滝',
+    '山本',
+    '広瀬',
+    '坂下',
+    '西本'
+  ];
   late String _dropdownValue;
   late TimeOfDay selectedTime;
 
@@ -49,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _clockString = '';
   final DateFormat _clockFormat = DateFormat('yyyy/MM/dd  HH:mm:ss');
 
-  List<AttendData> _dataList = [];
+  final List<AttendData> _dataList = [];
 
   @override
   void initState() {
@@ -63,10 +65,11 @@ class _MyHomePageState extends State<MyHomePage> {
     DateTime now = DateTime.now();
     _clockString = _clockFormat.format(now);
 
-    Timer(const Duration(milliseconds: 100), () {
+    Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
       DateTime now = DateTime.now();
 
       _clockString = _clockFormat.format(now);
+      setState(() {});
     });
 
     _get();
@@ -97,8 +100,18 @@ class _MyHomePageState extends State<MyHomePage> {
           DataCell(Text(type)),
           DataCell(IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () {
+            onPressed: () async {
               print('presseed');
+              bool? delete = await showDialog<bool>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) {
+                    return const DeleteDialog();
+                  });
+
+              if (delete!) {
+                _deleteRow(data);
+              }
             },
           )),
         ]);
@@ -110,9 +123,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return '${dateTime.month}月';
   }
 
-  void _addDataRow(List<AttendData> result) {
-    for (int i = 0; i < result.length; ++i) {
-      _dataRowList.add(_getDataRowByAttendData(result[i]));
+  //void _updateDataRow(List<AttendData> result) {
+  void _updateDataRow() {
+    _dataRowList.clear();
+    for (int i = 0; i < _dataList.length; ++i) {
+      _dataRowList.add(_getDataRowByAttendData(_dataList[i]));
     }
   }
 
@@ -125,9 +140,10 @@ class _MyHomePageState extends State<MyHomePage> {
     String sheetName = _getSheetName(DateTime.now());
     List<AttendData> result =
         await _attendanceService.getData(sheetId, sheetName);
-    _dataRowList.clear();
+    _dataList.clear();
+    _dataList.addAll(result);
     setState(() {
-      _addDataRow(result);
+      _updateDataRow();
     });
     await Future.delayed(wait100Milliseconds);
     setState(() {
@@ -138,8 +154,11 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _clockIn() async {
     List<AttendData> result = await _setClock(AttendType.clockIn);
 
+    _dataList.clear();
+    _dataList.addAll(result);
+
     setState(() {
-      _addDataRow(result);
+      _updateDataRow();
     });
     await Future.delayed(wait100Milliseconds);
     setState(() {
@@ -149,9 +168,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _clockOut() async {
     List<AttendData> result = await _setClock(AttendType.clockOut);
+    _dataList.clear();
+    _dataList.addAll(result);
 
     setState(() {
-      _addDataRow(result);
+      _updateDataRow();
     });
     await Future.delayed(wait100Milliseconds);
     setState(() {
@@ -171,11 +192,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _deleteRow(AttendData data) async {
+    print('delete row');
     String sheetName = _getSheetName(data.time);
     List<AttendData> result = await _attendanceService.updateStatusById(
         sheetId, sheetName, data.id, 'deleted');
+
+    print('result = $result');
+
+    _dataList.clear();
+    _dataList.addAll(result);
+
     setState(() {
-      //  _dataRowList.removeWhere((element) => element.)
+      _updateDataRow();
     });
   }
 
@@ -188,20 +216,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _manualInput(AttendType type) async {
-    final TimeOfDay? picked = await showTimePicker(
+    //await _attendanceService.setClock(sheetId, sheetName, data);
+    DateTime? dateTime = await showDialog<DateTime?>(
         context: context,
-        initialTime: selectedTime,
-        initialEntryMode: TimePickerEntryMode.dial);
+        builder: (_) {
+          return const DateTimePickerDialog();
+        });
 
-    if (picked != null) {
-      DateTime now = DateTime.now();
-      DateTime time =
-          DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
-      String sheetName = _getSheetName(now);
+    if (dateTime != null) {
+      String sheetName = _getSheetName(dateTime);
       String name = _dropdownValue;
-      AttendData data = AttendData(name, type, time);
+      AttendData data = AttendData(name, type, dateTime);
 
-      await _attendanceService.setClock(sheetId, sheetName, data);
+      List<AttendData> result =
+          await _attendanceService.setClock(sheetId, sheetName, data);
+      _dataList.clear();
+      _dataList.addAll(result);
+
+      setState(() {
+        _updateDataRow();
+      });
+      await Future.delayed(wait100Milliseconds);
+      setState(() {
+        _scrollToEnd();
+      });
     }
   }
 
@@ -251,20 +289,16 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: SingleChildScrollView(
                                 controller: _scrollController,
                                 child: DataTable(
+                                    border: TableBorder.all(),
                                     headingRowColor:
                                         MaterialStateColor.resolveWith(
                                             (states) => const Color.fromARGB(
                                                 255, 218, 218, 218)),
                                     columns: const [
-                                      const DataColumn(label: Text('名前')),
-                                      const DataColumn(label: Text('時刻')),
-                                      const DataColumn(label: Text('種類')),
-                                      const DataColumn(label: Text('削除')),
-                                      /*
-                                      DataColumn(
-                                          label: Container(
-                                              width: 50, child: Text('修正'))),
-                                              */
+                                      DataColumn(label: Text('名前')),
+                                      DataColumn(label: Text('時刻')),
+                                      DataColumn(label: Text('種類')),
+                                      DataColumn(label: Text('削除')),
                                     ],
                                     rows: _dataRowList))))),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
