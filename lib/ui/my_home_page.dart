@@ -8,8 +8,9 @@ import '../services/gas_client.dart';
 import '../services/attendance_service.dart';
 import '../application/constants.dart';
 
-import 'datetime_picker_dialog.dart';
-import 'delete_dialog.dart';
+import 'components/data_table_view.dart';
+import 'components/datetime_picker_dialog.dart';
+import 'components/delete_dialog.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -23,14 +24,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final sheetId = '2023年';
 
-  late List<DataRow> _dataRowList;
+  final List<DataRow> _dataRowList = [];
 
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
   final TextStyle _buttonTextStyle = const TextStyle(fontSize: 15);
 
-  final List<String> nameList = <String>[
+  final List<String> _nameList = <String>[
     'test',
     '八木',
     '大滝',
@@ -39,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
     '坂下',
     '西本'
   ];
-  late String _dropdownValue;
+  //late String _dropdownValue;
   late TimeOfDay selectedTime;
 
   final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(0, 10, 0, 10);
@@ -53,15 +54,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final List<AttendData> _dataList = [];
 
+  int _choiceIndex = 0;
+  String get _chooseName {
+    return _nameList[_choiceIndex];
+  }
+
   @override
   void initState() {
     super.initState();
-    _dropdownValue = nameList.first;
+    //_dropdownValue = _nameList.first;
     selectedTime = TimeOfDay.now();
-    _dataRowList = <DataRow>[];
     _gasClient = GasClient(Constants.clientId, Constants.clientSecret,
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
+
     DateTime now = DateTime.now();
     _clockString = _clockFormat.format(now);
 
@@ -183,7 +189,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<List<AttendData>> _setClock(AttendType type) async {
     DateTime now = DateTime.now();
     String sheetName = _getSheetName(now);
-    String name = _dropdownValue;
+    //String name = _dropdownValue;
+    String name = _chooseName;
     AttendData data = AttendData(name, type, now);
     List<AttendData> result =
         await _attendanceService.setClock(sheetId, sheetName, data);
@@ -225,7 +232,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (dateTime != null) {
       String sheetName = _getSheetName(dateTime);
-      String name = _dropdownValue;
+      //String name = _dropdownValue;
+      String name = _chooseName;
       AttendData data = AttendData(name, type, dateTime);
 
       List<AttendData> result =
@@ -283,24 +291,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: SizedBox(
                         width: double.infinity,
                         height: MediaQuery.of(context).size.height * 0.5,
-                        child: Container(
-                            decoration:
-                                BoxDecoration(border: Border.all(width: 1)),
-                            child: SingleChildScrollView(
-                                controller: _scrollController,
-                                child: DataTable(
-                                    border: TableBorder.all(),
-                                    headingRowColor:
-                                        MaterialStateColor.resolveWith(
-                                            (states) => const Color.fromARGB(
-                                                255, 218, 218, 218)),
-                                    columns: const [
-                                      DataColumn(label: Text('名前')),
-                                      DataColumn(label: Text('時刻')),
-                                      DataColumn(label: Text('種類')),
-                                      DataColumn(label: Text('削除')),
-                                    ],
-                                    rows: _dataRowList))))),
+                        child: DataTableView(
+                          scrollController: _scrollController,
+                          dataRowList: _dataRowList,
+                        ))),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   /*
                   Expanded(
@@ -343,7 +337,27 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Text('手動退勤', style: _buttonTextStyle)))),
                 ]),
                 Padding(
-                    padding: allPadding,
+                  padding: allPadding,
+                  child: Column(children: [
+                    Wrap(
+                        spacing: 10,
+                        children:
+                            // _choiceChipList)]),
+                            List<ChoiceChip>.generate(_nameList.length,
+                                (int index) {
+                          return ChoiceChip(
+                            label: Text(_nameList[index],
+                                style: const TextStyle(fontSize: 20)),
+                            selectedColor: Colors.yellow,
+                            selected: _choiceIndex == index,
+                            onSelected: (selected) {
+                              _choiceIndex = index;
+                            },
+                          );
+                        }))
+                  ]),
+
+                  /*
                     child: DropdownButton<String>(
                         value: _dropdownValue,
                         items: nameList
@@ -355,7 +369,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           setState(() {
                             _dropdownValue = value!;
                           });
-                        }))
+                        })*/
+                )
               ])),
             )));
   }

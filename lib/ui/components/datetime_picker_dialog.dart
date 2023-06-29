@@ -42,8 +42,6 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
     return AlertDialog(
         title: const Text('手動設定'),
         content: SizedBox(
-            //width: MediaQuery.of(context).size.height * 0.5,
-            //height: MediaQuery.of(context).size.height * 0.5,
             child: Row(children: [
           TextButton(
             child: Text(_dateString, style: _textPickerStyle),

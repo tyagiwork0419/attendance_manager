@@ -1,5 +1,5 @@
 class Constants {
-  static const String version = '0.0.4';
+  static const String version = '0.0.5';
 
   static const String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbzbD2EI-G63Jkk9BwLV8yJNTnsQkIEcr0z_gDY--b9AIBXJSksTbGZRqg-Q8Vf27W_J:run';
