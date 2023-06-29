@@ -51,6 +51,9 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                   initialDate: _date,
                   firstDate: DateTime(_date.year - 1),
                   lastDate: DateTime(_date.year + 1));
+              if (picked == null) {
+                return;
+              }
               _date = picked!;
               setState(() {
                 _dateString = _dateFormat.format(_date);
@@ -65,6 +68,9 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                   initialTime: _time,
                   initialEntryMode: TimePickerEntryMode.dial,
                 );
+                if (picked == null) {
+                  return;
+                }
                 _time = picked!;
 
                 setState(() {
