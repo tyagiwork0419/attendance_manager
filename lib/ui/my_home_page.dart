@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 import '../models/attend_data.dart';
@@ -50,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String _clockString = '';
   late DateTime _selectedDate;
-  final DateFormat _clockFormat = DateFormat('yyyy/MM/dd  HH:mm:ss');
+  late DateFormat _clockFormat; // = DateFormat('yyyy/MM/dd  HH:mm:ss E');
   final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
@@ -67,6 +68,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _gasClient = GasClient(Constants.clientId, Constants.clientSecret,
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
+
+    initializeDateFormatting('ja');
+
+    _clockFormat = DateFormat('yyyy/MM/dd  HH:mm:ss E', 'ja');
 
     DateTime now = DateTime.now();
     _clockString = _clockFormat.format(now);
@@ -290,6 +295,12 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     _selectedDate = picked;
+
+    _dataList.clear();
+    setState(() {
+      _updateDataRow();
+    });
+
     _get(picked);
   }
 
