@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
 class DataTableView extends StatefulWidget {
-  late ScrollController? scrollController = ScrollController();
-  late List<DataRow> dataRowList;
+  final ScrollController? scrollController;
+  final List<DataRow>? dataRowList;
 
-  DataTableView({super.key, this.scrollController, required this.dataRowList}) {
-    scrollController ??= ScrollController();
-  }
+  DataTableView(
+      {super.key,
+      ScrollController? scrollController,
+      List<DataRow>? dataRowList})
+      //scrollController ??= ScrollController();
+      : scrollController = scrollController ?? ScrollController(),
+        dataRowList = dataRowList ?? <DataRow>[];
 
   @override
   State<DataTableView> createState() => _DataTableViewState();
@@ -32,6 +36,6 @@ class _DataTableViewState extends State<DataTableView> {
                   DataColumn(label: Text('種類')),
                   DataColumn(label: Text('削除')),
                 ],
-                rows: widget.dataRowList)));
+                rows: widget.dataRowList!)));
   }
 }

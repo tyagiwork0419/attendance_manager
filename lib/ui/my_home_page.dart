@@ -11,6 +11,7 @@ import '../application/constants.dart';
 import 'components/data_table_view.dart';
 import 'components/datetime_picker_dialog.dart';
 import 'components/delete_dialog.dart';
+import 'components/error_dialog.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -40,8 +41,6 @@ class _MyHomePageState extends State<MyHomePage> {
     '坂下',
     '西本'
   ];
-  //late String _dropdownValue;
-  late TimeOfDay selectedTime;
 
   final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(0, 10, 0, 10);
   final EdgeInsets allPadding = const EdgeInsets.all(10);
@@ -50,7 +49,9 @@ class _MyHomePageState extends State<MyHomePage> {
   final Duration wait100Milliseconds = const Duration(milliseconds: 100);
 
   String _clockString = '';
+  late DateTime _selectedDate;
   final DateFormat _clockFormat = DateFormat('yyyy/MM/dd  HH:mm:ss');
+  final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
 
@@ -63,13 +64,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     //_dropdownValue = _nameList.first;
-    selectedTime = TimeOfDay.now();
     _gasClient = GasClient(Constants.clientId, Constants.clientSecret,
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
 
     DateTime now = DateTime.now();
     _clockString = _clockFormat.format(now);
+    _selectedDate = now;
 
     Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
       DateTime now = DateTime.now();
@@ -78,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {});
     });
 
-    _get();
+    _get(now);
   }
 
   DataRow _getDataRowByAttendData(AttendData data) {
@@ -129,7 +130,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return '${dateTime.month}月';
   }
 
-  //void _updateDataRow(List<AttendData> result) {
   void _updateDataRow() {
     _dataRowList.clear();
     for (int i = 0; i < _dataList.length; ++i) {
@@ -142,48 +142,68 @@ class _MyHomePageState extends State<MyHomePage> {
         duration: const Duration(milliseconds: 100), curve: Curves.ease);
   }
 
-  Future<void> _get() async {
-    String sheetName = _getSheetName(DateTime.now());
-    List<AttendData> result =
-        await _attendanceService.getData(sheetId, sheetName);
-    _dataList.clear();
-    _dataList.addAll(result);
-    setState(() {
-      _updateDataRow();
-    });
-    await Future.delayed(wait100Milliseconds);
-    setState(() {
-      _scrollToEnd();
-    });
+  Future<void> _get(DateTime dateTime) async {
+    String sheetName = _getSheetName(dateTime);
+
+    try {
+      List<AttendData> result =
+          await _attendanceService.getData(sheetId, sheetName, dateTime);
+      _dataList.clear();
+      _dataList.addAll(result);
+      setState(() {
+        _updateDataRow();
+      });
+      await Future.delayed(wait100Milliseconds);
+      setState(() {
+        _scrollToEnd();
+      });
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
+  }
+
+  void _showErrorDialog(String error) {
+    print(error);
+    showDialog<void>(
+        context: context,
+        builder: (_) => ErrorDialog(title: '通信エラー', content: error));
   }
 
   Future<void> _clockIn() async {
-    List<AttendData> result = await _setClock(AttendType.clockIn);
+    try {
+      List<AttendData> result = await _setClock(AttendType.clockIn);
 
-    _dataList.clear();
-    _dataList.addAll(result);
+      _dataList.clear();
+      _dataList.addAll(result);
 
-    setState(() {
-      _updateDataRow();
-    });
-    await Future.delayed(wait100Milliseconds);
-    setState(() {
-      _scrollToEnd();
-    });
+      setState(() {
+        _updateDataRow();
+      });
+      await Future.delayed(wait100Milliseconds);
+      setState(() {
+        _scrollToEnd();
+      });
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
   }
 
   Future<void> _clockOut() async {
-    List<AttendData> result = await _setClock(AttendType.clockOut);
-    _dataList.clear();
-    _dataList.addAll(result);
+    try {
+      List<AttendData> result = await _setClock(AttendType.clockOut);
+      _dataList.clear();
+      _dataList.addAll(result);
 
-    setState(() {
-      _updateDataRow();
-    });
-    await Future.delayed(wait100Milliseconds);
-    setState(() {
-      _scrollToEnd();
-    });
+      setState(() {
+        _updateDataRow();
+      });
+      await Future.delayed(wait100Milliseconds);
+      setState(() {
+        _scrollToEnd();
+      });
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
   }
 
   Future<List<AttendData>> _setClock(AttendType type) async {
@@ -199,19 +219,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _deleteRow(AttendData data) async {
-    print('delete row');
-    String sheetName = _getSheetName(data.time);
-    List<AttendData> result = await _attendanceService.updateStatusById(
-        sheetId, sheetName, data.id, 'deleted');
+    try {
+      print('delete row');
+      String sheetName = _getSheetName(data.time);
+      List<AttendData> result = await _attendanceService.updateStatusById(
+          sheetId, sheetName, data.id, 'deleted');
 
-    print('result = $result');
+      print('result = $result');
 
-    _dataList.clear();
-    _dataList.addAll(result);
+      _dataList.clear();
+      _dataList.addAll(result);
 
-    setState(() {
-      _updateDataRow();
-    });
+      setState(() {
+        _updateDataRow();
+      });
+    } catch (e) {
+      _showErrorDialog(e.toString());
+    }
   }
 
   Future<void> _manualClockIn() async {
@@ -223,42 +247,54 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _manualInput(AttendType type) async {
-    //await _attendanceService.setClock(sheetId, sheetName, data);
-    DateTime? dateTime = await showDialog<DateTime?>(
-        context: context,
-        builder: (_) {
-          return const DateTimePickerDialog();
+    try {
+      //await _attendanceService.setClock(sheetId, sheetName, data);
+      DateTime? dateTime = await showDialog<DateTime?>(
+          context: context,
+          builder: (_) {
+            return const DateTimePickerDialog();
+          });
+
+      if (dateTime != null) {
+        String sheetName = _getSheetName(dateTime);
+        //String name = _dropdownValue;
+        String name = _chooseName;
+        AttendData data = AttendData(name, type, dateTime);
+
+        List<AttendData> result =
+            await _attendanceService.setClock(sheetId, sheetName, data);
+        _dataList.clear();
+        _dataList.addAll(result);
+
+        setState(() {
+          _updateDataRow();
         });
-
-    if (dateTime != null) {
-      String sheetName = _getSheetName(dateTime);
-      //String name = _dropdownValue;
-      String name = _chooseName;
-      AttendData data = AttendData(name, type, dateTime);
-
-      List<AttendData> result =
-          await _attendanceService.setClock(sheetId, sheetName, data);
-      _dataList.clear();
-      _dataList.addAll(result);
-
-      setState(() {
-        _updateDataRow();
-      });
-      await Future.delayed(wait100Milliseconds);
-      setState(() {
-        _scrollToEnd();
-      });
+        await Future.delayed(wait100Milliseconds);
+        setState(() {
+          _scrollToEnd();
+        });
+      }
+    } catch (e) {
+      _showErrorDialog(e.toString());
     }
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: _selectedDate,
+        firstDate: DateTime(_selectedDate.year - 1),
+        lastDate: DateTime(_selectedDate.year + 1));
+    if (picked == null) {
+      return;
+    }
+
+    _selectedDate = picked;
+    _get(picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
@@ -283,9 +319,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   width: double.infinity,
                   height: MediaQuery.of(context).size.height * 0.05,
                   child: Center(
-                      child: Text(_clockString,
-                          style: const TextStyle(fontSize: 20))),
+                    child: Text(_clockString,
+                        style: const TextStyle(fontSize: 20)),
+                  ),
                 ),
+                SizedBox(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.05,
+                    child: Center(
+                        child: ElevatedButton(
+                      child: Text(_dateFormat.format(_selectedDate)),
+                      onPressed: () {
+                        _selectDate();
+                      },
+                    ))),
                 Padding(
                     padding: topBottomPadding,
                     child: SizedBox(
