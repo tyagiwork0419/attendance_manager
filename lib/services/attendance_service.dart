@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:intl/intl.dart';
+
 import 'gas_client.dart';
 import '../models/attend_data.dart';
 
@@ -8,10 +10,10 @@ class AttendanceService {
   String accessToken = '';
 
   AttendanceService(this._gasClient);
+  final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
 
   Future<List<AttendData>> setClock(
       String fileName, String sheetName, AttendData data) async {
-    //AttendData attendData = AttendData(0, name, type, time, Status.normal);
     Map<String, dynamic> jsonObj = data.toJson();
     Map<String, Object> parameters = {
       'fileName': fileName,
@@ -27,13 +29,14 @@ class AttendanceService {
     return result;
   }
 
-  //Future<List<AttendData>> getData(String fileName, String sheetName) async {
-  Future<List<AttendData>> getData(String fileName, String sheetName) async {
+  Future<List<AttendData>> getData(
+      String fileName, String sheetName, DateTime dateTime) async {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
+      'date': _dateTimeFormat.format(dateTime)
     };
-    //accessToken = await _gasClient.getAccessToken();
+
     var jsonResult =
         await _gasClient.post('selectByDate', accessToken, parameters);
 

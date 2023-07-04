@@ -54,7 +54,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
               if (picked == null) {
                 return;
               }
-              _date = picked!;
+              _date = picked;
               setState(() {
                 _dateString = _dateFormat.format(_date);
               });
@@ -71,7 +71,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 if (picked == null) {
                   return;
                 }
-                _time = picked!;
+                _time = picked;
 
                 setState(() {
                   _timeString = _time.to24hours();
