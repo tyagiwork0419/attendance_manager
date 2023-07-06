@@ -40,20 +40,13 @@ class GasClient {
 
   Future<String> post(
       String functionName, String accessToken, Object parameters) async {
-    //var accessToken = await _getAccessToken();
     accessToken = await getAccessToken();
-
-    //oauth2.Client client = await oauth2.clientCredentialsGrant(Uri.parse(_tokenUrl), _clientId, _clientSecret);
 
     Uri uri = Uri.parse(_apiUrl);
 
-    final body = json.encode({
-      //'function': 'select',
-      'function': functionName,
-      'parameters': parameters
-    });
+    final body =
+        json.encode({'function': functionName, 'parameters': parameters});
 
-    //http.Response response = await client.post(uri, body: body);
     Map<String, String> headers = {
       'Authorization': 'Bearer $accessToken',
     };

@@ -11,6 +11,7 @@ class AttendanceService {
 
   AttendanceService(this._gasClient);
   final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
+  //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   Future<List<AttendData>> setClock(
       String fileName, String sheetName, AttendData data) async {
@@ -24,7 +25,6 @@ class AttendanceService {
 
     var jsonResult =
         await _gasClient.post('insertRows', accessToken, parameters);
-    print('jsonResult = $jsonResult');
     var result = _parseFromJson(jsonResult);
     return result;
   }
@@ -34,7 +34,7 @@ class AttendanceService {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
-      'date': _dateTimeFormat.format(dateTime)
+      'dateTime': _dateTimeFormat.format(dateTime)
     };
 
     var jsonResult =
@@ -57,18 +57,17 @@ class AttendanceService {
     return result;
   }
 
-  Future<List<AttendData>> updateStatusById(
-      String fileName, String sheetName, int id, String status) async {
+  Future<List<AttendData>> updateById(
+      String fileName, String sheetName, AttendData data) async {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
-      'postData': {'id': id, 'status': status},
+      'postData': data.toJson()
     };
     print(parameters);
 
     var jsonResult =
-        await _gasClient.post('updateStatusById', accessToken, parameters);
-    print('jsonResult = $jsonResult');
+        await _gasClient.post('updateById', accessToken, parameters);
     var result = _parseFromJson(jsonResult);
     return result;
   }

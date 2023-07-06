@@ -32,6 +32,7 @@ class _DataTableViewState extends State<DataTableView> {
                     (states) => const Color.fromARGB(255, 218, 218, 218)),
                 columns: const [
                   DataColumn(label: Text('名前')),
+                  //DataColumn(label: Text('日付')),
                   DataColumn(label: Text('時刻')),
                   DataColumn(label: Text('種類')),
                   DataColumn(label: Text('削除')),
