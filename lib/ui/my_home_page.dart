@@ -89,9 +89,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DataRow _getDataRowByAttendData(AttendData data) {
     String name = data.name;
-    String time = data.timeStr;
+    //String date = data.dateStr;
+    //String time = data.timeStr;
+    String dateTime = data.dateTimeStr;
     String type = data.type.toStr;
     Color color;
+
     switch (data.type) {
       case AttendType.clockIn:
         color = const Color.fromARGB(255, 210, 255, 212);
@@ -108,7 +111,9 @@ class _MyHomePageState extends State<MyHomePage> {
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
           DataCell(Text(name)),
-          DataCell(Text(time)),
+          //DataCell(Text(date)),
+          //DataCell(Text(time)),
+          DataCell(Text(dateTime)),
           DataCell(Text(type)),
           DataCell(IconButton(
             icon: const Icon(Icons.delete),
@@ -226,9 +231,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _deleteRow(AttendData data) async {
     try {
       print('delete row');
-      String sheetName = _getSheetName(data.time);
-      List<AttendData> result = await _attendanceService.updateStatusById(
-          sheetId, sheetName, data.id, 'deleted');
+      String sheetName = _getSheetName(data.dateTime);
+      data.status = Status.deleted;
+      List<AttendData> result =
+          await _attendanceService.updateById(sheetId, sheetName, data);
 
       print('result = $result');
 

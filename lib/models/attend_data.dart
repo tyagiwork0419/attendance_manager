@@ -60,15 +60,37 @@ class AttendData {
   late int id = 0;
   late String name;
   late AttendType type;
-  late DateTime time;
+  late DateTime dateTime;
   late Status status = Status.normal;
 
-  final DateFormat _timeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
+  //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
+  //final DateFormat _timeFormat = DateFormat('HH:mm:ss');
+  final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
 
-  AttendData(this.name, this.type, this.time);
+  AttendData(this.name, this.type, this.dateTime);
 
+/*
+  DateTime get time {
+    return DateTime(0, 0, 0, dateTime.hour, dateTime.minute, dateTime.second);
+  }
+
+  DateTime get date {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day);
+  }
+  */
+
+/*
   String get timeStr {
-    return _timeFormat.format(time);
+    return _timeFormat.format(dateTime);
+  }
+
+  String get dateStr {
+    return _dateFormat.format(dateTime);
+  }
+  */
+
+  String get dateTimeStr {
+    return _dateTimeFormat.format(dateTime);
   }
 
   AttendData.fromJson(Map<String, dynamic> jsonMap)
@@ -76,7 +98,8 @@ class AttendData {
         name = jsonMap['name']!,
         type = AttendTypeExtension.toAttendType(jsonMap['type']!),
         status = StatusExtension.toStatus(jsonMap['status']!) {
-    time = _timeFormat.parse(jsonMap['time']!);
+    dateTime = _dateTimeFormat.parse(jsonMap['dateTime']);
+    //dateTime = _dateTimeFormat.parse(jsonMap['date'] + ' ' + jsonMap['time']);
   }
 
   Map<String, dynamic> toJson() {
@@ -84,7 +107,8 @@ class AttendData {
       'id': id.toString(),
       'name': name,
       'type': type.toStr,
-      'time': timeStr,
+      'dateTime': dateTimeStr,
+      //'time': timeStr,
       'status': status.toStr,
     };
   }
