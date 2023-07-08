@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 class GasClient {
@@ -13,7 +14,7 @@ class GasClient {
       this._tokenUrl, this._apiUrl);
 
   Future<String> getAccessToken() async {
-    print('get access token');
+    debugPrint('get access token');
     Map<String, String> headers = {'content-type': 'application/json'};
     String body = json.encode({
       'client_id': _clientId,
@@ -22,12 +23,12 @@ class GasClient {
       'grant_type': _grantType,
     });
 
-    print(body);
+    debugPrint(body);
 
     http.Response response =
         await http.post(Uri.parse(_tokenUrl), headers: headers, body: body);
 
-    print(response.statusCode);
+    debugPrint(response.statusCode.toString());
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
@@ -55,7 +56,7 @@ class GasClient {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      print('data = $data');
+      debugPrint('data = $data');
       String result = data['response']['result'];
       return result;
     } else {

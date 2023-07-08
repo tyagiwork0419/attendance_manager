@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 
 import 'gas_client.dart';
@@ -11,7 +12,6 @@ class AttendanceService {
 
   AttendanceService(this._gasClient);
   final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
-  //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   Future<List<AttendData>> setClock(
       String fileName, String sheetName, AttendData data) async {
@@ -21,7 +21,7 @@ class AttendanceService {
       'sheetName': sheetName,
       'postData': jsonObj,
     };
-    print(parameters);
+    debugPrint(parameters.toString());
 
     var jsonResult =
         await _gasClient.post('insertRows', accessToken, parameters);
@@ -64,7 +64,7 @@ class AttendanceService {
       'sheetName': sheetName,
       'postData': data.toJson()
     };
-    print(parameters);
+    debugPrint(parameters.toString());
 
     var jsonResult =
         await _gasClient.post('updateById', accessToken, parameters);

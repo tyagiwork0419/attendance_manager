@@ -3,23 +3,23 @@ import 'package:flutter/material.dart';
 class DataTableView extends StatefulWidget {
   final ScrollController? scrollController;
   final List<DataRow>? dataRowList;
+  final bool? isLoading;
 
   DataTableView(
       {super.key,
       ScrollController? scrollController,
-      List<DataRow>? dataRowList})
+      List<DataRow>? dataRowList,
+      bool? isLoading})
       //scrollController ??= ScrollController();
       : scrollController = scrollController ?? ScrollController(),
-        dataRowList = dataRowList ?? <DataRow>[];
+        dataRowList = dataRowList ?? <DataRow>[],
+        isLoading = isLoading ?? false;
 
   @override
   State<DataTableView> createState() => _DataTableViewState();
 }
 
 class _DataTableViewState extends State<DataTableView> {
-  //final ScrollController _scrollController = ScrollController();
-  //late List<DataRow> _dataRowList;
-
   @override
   Widget build(BuildContext context) {
     return Container(
