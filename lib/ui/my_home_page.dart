@@ -55,6 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
+  late bool _isLoading;
 
   int _choiceIndex = 0;
   String get _chooseName {
@@ -76,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
     DateTime now = DateTime.now();
     _clockString = _clockFormat.format(now);
     _selectedDate = now;
+    _isLoading = false;
 
     Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
       DateTime now = DateTime.now();
@@ -156,10 +158,12 @@ class _MyHomePageState extends State<MyHomePage> {
     String sheetName = _getSheetName(dateTime);
 
     try {
+      _isLoading = true;
       List<AttendData> result =
           await _attendanceService.getData(sheetId, sheetName, dateTime);
       _dataList.clear();
       _dataList.addAll(result);
+      _isLoading = false;
       setState(() {
         _updateDataRow();
       });
@@ -168,6 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
         _scrollToEnd();
       });
     } catch (e) {
+      _isLoading = false;
       _showErrorDialog(e.toString());
     }
   }
@@ -179,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (_) => ErrorDialog(title: '通信エラー', content: error));
   }
 
+/*
   Future<void> _clockIn() async {
     try {
       List<AttendData> result = await _setClock(AttendType.clockIn);
@@ -226,9 +232,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return result;
   }
+  */
 
   Future<void> _deleteRow(AttendData data) async {
     try {
+      _isLoading = true;
       debugPrint('delete row');
       String sheetName = _getSheetName(data.dateTime);
       data.status = Status.deleted;
@@ -239,11 +247,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
       _dataList.clear();
       _dataList.addAll(result);
+      _isLoading = false;
 
       setState(() {
         _updateDataRow();
       });
     } catch (e) {
+      _isLoading = false;
       _showErrorDialog(e.toString());
     }
   }
@@ -257,36 +267,40 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _manualInput(AttendType type) async {
+    DateTime? dateTime = await showDialog<DateTime?>(
+        context: context,
+        builder: (_) {
+          return DateTimePickerDialog(
+              dateTime: _selectedDate,
+              //nameList: _nameList,
+              selectedName: _chooseName,
+              selectedType: type);
+        });
+
+    if (dateTime == null) {
+      return;
+    }
     try {
-      DateTime? dateTime = await showDialog<DateTime?>(
-          context: context,
-          builder: (_) {
-            return DateTimePickerDialog(
-                dateTime: _selectedDate,
-                //nameList: _nameList,
-                selectedName: _chooseName,
-                selectedType: type);
-          });
+      _isLoading = true;
+      String sheetName = _getSheetName(dateTime);
+      String name = _chooseName;
+      AttendData data = AttendData(name, type, dateTime);
 
-      if (dateTime != null) {
-        String sheetName = _getSheetName(dateTime);
-        String name = _chooseName;
-        AttendData data = AttendData(name, type, dateTime);
+      List<AttendData> result =
+          await _attendanceService.setClock(sheetId, sheetName, data);
+      _dataList.clear();
+      _dataList.addAll(result);
+      _isLoading = false;
 
-        List<AttendData> result =
-            await _attendanceService.setClock(sheetId, sheetName, data);
-        _dataList.clear();
-        _dataList.addAll(result);
-
-        setState(() {
-          _updateDataRow();
-        });
-        await Future.delayed(wait100Milliseconds);
-        setState(() {
-          _scrollToEnd();
-        });
-      }
+      setState(() {
+        _updateDataRow();
+      });
+      await Future.delayed(wait100Milliseconds);
+      setState(() {
+        _scrollToEnd();
+      });
     } catch (e) {
+      _isLoading = false;
       _showErrorDialog(e.toString());
     }
   }
@@ -326,95 +340,96 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: Text('version: ${Constants.version}')))
           ],
         ),
-        body: Padding(
-            padding: allPadding,
-            child: SingleChildScrollView(
+        body: SingleChildScrollView(
+            child: Padding(
+          padding: allPadding,
+          child: Center(
+              // Center is a layout widget. It takes a single child and positions it
+              // in the middle of the parent.
+              child: Column(children: [
+            SizedBox(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height * 0.05,
               child: Center(
-                  // Center is a layout widget. It takes a single child and positions it
-                  // in the middle of the parent.
-                  child: Column(children: [
-                SizedBox(
-                  width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.05,
-                  child: Center(
-                    child: Text(_clockString,
-                        style: const TextStyle(fontSize: 20)),
-                  ),
-                ),
-                SizedBox(
+                child: Text(_clockString, style: const TextStyle(fontSize: 20)),
+              ),
+            ),
+            SizedBox(
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.05,
+                child: Center(
+                    child: ElevatedButton(
+                  child: Text(_dateFormat.format(_selectedDate)),
+                  onPressed: () {
+                    _selectDate();
+                  },
+                ))),
+            Padding(
+                padding: topBottomPadding,
+                //child: Stack(
+                child: SizedBox(
                     width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.05,
-                    child: Center(
-                        child: ElevatedButton(
-                      child: Text(_dateFormat.format(_selectedDate)),
-                      onPressed: () {
-                        _selectDate();
-                      },
-                    ))),
-                Padding(
-                    padding: topBottomPadding,
-                    child: SizedBox(
-                        width: double.infinity,
-                        height: MediaQuery.of(context).size.height * 0.5,
-                        child: DataTableView(
-                          scrollController: _scrollController,
-                          dataRowList: _dataRowList,
-                        ))),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Expanded(
-                      child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                              onPressed: _manualClockIn,
-                              child: Text('出勤', style: _buttonTextStyle)))),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                              onPressed: _manualClockOut,
-                              child: Text('退勤', style: _buttonTextStyle)))),
-                ]),
-                /*
-                const SizedBox(height: 10),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Expanded(
-                      child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                              onPressed: _manualClockIn,
-                              child: Text('手動出勤', style: _buttonTextStyle)))),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                              onPressed: _manualClockOut,
-                              child: Text('手動退勤', style: _buttonTextStyle)))),
-                ]),
-                */
-                Padding(
-                  padding: allPadding,
-                  child: Column(children: [
-                    Wrap(
-                        spacing: 10,
-                        children:
-                            // _choiceChipList)]),
-                            List<ChoiceChip>.generate(_nameList.length,
-                                (int index) {
-                          return ChoiceChip(
-                            label: Text(_nameList[index],
-                                style: const TextStyle(fontSize: 20)),
-                            selectedColor: Colors.yellow,
-                            selected: _choiceIndex == index,
-                            onSelected: (selected) {
-                              _choiceIndex = index;
-                            },
-                          );
-                        }))
-                  ]),
-                )
-              ])),
-            )));
+                    height: MediaQuery.of(context).size.height * 0.5,
+                    child: Stack(
+                        fit: StackFit.expand,
+                        alignment: Alignment.center,
+                        children: [
+                          //SizedBox(
+                          //   width: double.infinity,
+                          //  height: MediaQuery.of(context).size.height * 0.5,
+                          //child: DataTableView(
+                          DataTableView(
+                            scrollController: _scrollController,
+                            dataRowList: _dataRowList,
+                          ),
+                          if (_isLoading)
+                            //if (true)
+                            const Stack(fit: StackFit.expand, children: [
+                              //SizedBox(
+                              //width: double.infinity,
+                              ColoredBox(
+                                color: Colors.black26,
+                              ),
+                              Center(child: CircularProgressIndicator()),
+                            ]),
+                        ]))),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Expanded(
+                  child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: _manualClockIn,
+                          child: Text('出勤', style: _buttonTextStyle)))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: _manualClockOut,
+                          child: Text('退勤', style: _buttonTextStyle)))),
+            ]),
+            Padding(
+              padding: allPadding,
+              child: Column(children: [
+                Wrap(
+                    spacing: 10,
+                    children:
+                        // _choiceChipList)]),
+                        List<ChoiceChip>.generate(_nameList.length,
+                            (int index) {
+                      return ChoiceChip(
+                        label: Text(_nameList[index],
+                            style: const TextStyle(fontSize: 20)),
+                        selectedColor: Colors.yellow,
+                        selected: _choiceIndex == index,
+                        onSelected: (selected) {
+                          _choiceIndex = index;
+                        },
+                      );
+                    }))
+              ]),
+            )
+          ])),
+        )));
   }
 }
