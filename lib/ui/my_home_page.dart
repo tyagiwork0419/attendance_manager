@@ -10,9 +10,9 @@ import '../services/attendance_service.dart';
 import '../application/constants.dart';
 
 import 'components/data_table_view.dart';
-import 'components/datetime_picker_dialog.dart';
-import 'components/delete_dialog.dart';
-import 'components/error_dialog.dart';
+import 'components/dialogs/datetime_picker_dialog.dart';
+import 'components/dialogs/delete_dialog.dart';
+import 'components/dialogs/error_dialog.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -118,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
           DataCell(IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
-              print('presseed');
+              debugPrint('presseed');
               bool? delete = await showDialog<bool>(
                   context: context,
                   barrierDismissible: false,
@@ -173,7 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _showErrorDialog(String error) {
-    print(error);
+    debugPrint(error);
     showDialog<void>(
         context: context,
         builder: (_) => ErrorDialog(title: '通信エラー', content: error));
@@ -219,7 +219,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<List<AttendData>> _setClock(AttendType type) async {
     DateTime now = DateTime.now();
     String sheetName = _getSheetName(now);
-    //String name = _dropdownValue;
     String name = _chooseName;
     AttendData data = AttendData(name, type, now);
     List<AttendData> result =
@@ -230,13 +229,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _deleteRow(AttendData data) async {
     try {
-      print('delete row');
+      debugPrint('delete row');
       String sheetName = _getSheetName(data.dateTime);
       data.status = Status.deleted;
       List<AttendData> result =
           await _attendanceService.updateById(sheetId, sheetName, data);
 
-      print('result = $result');
+      debugPrint('result = $result');
 
       _dataList.clear();
       _dataList.addAll(result);
@@ -259,16 +258,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _manualInput(AttendType type) async {
     try {
-      //await _attendanceService.setClock(sheetId, sheetName, data);
       DateTime? dateTime = await showDialog<DateTime?>(
           context: context,
           builder: (_) {
-            return const DateTimePickerDialog();
+            return DateTimePickerDialog(
+                dateTime: _selectedDate,
+                //nameList: _nameList,
+                selectedName: _chooseName,
+                selectedType: type);
           });
 
       if (dateTime != null) {
         String sheetName = _getSheetName(dateTime);
-        //String name = _dropdownValue;
         String name = _chooseName;
         AttendData data = AttendData(name, type, dateTime);
 
@@ -360,30 +361,21 @@ class _MyHomePageState extends State<MyHomePage> {
                           dataRowList: _dataRowList,
                         ))),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  /*
                   Expanded(
                       child: SizedBox(
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _get,
-                            child: Text('GET', style: _buttonTextStyle),
-                          ))),
-                  const SizedBox(width: 10),
-                  */
-                  Expanded(
-                      child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                              onPressed: _clockIn,
+                              onPressed: _manualClockIn,
                               child: Text('出勤', style: _buttonTextStyle)))),
                   const SizedBox(width: 10),
                   Expanded(
                       child: SizedBox(
                           height: 50,
                           child: ElevatedButton(
-                              onPressed: _clockOut,
+                              onPressed: _manualClockOut,
                               child: Text('退勤', style: _buttonTextStyle)))),
                 ]),
+                /*
                 const SizedBox(height: 10),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Expanded(
@@ -400,6 +392,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               onPressed: _manualClockOut,
                               child: Text('手動退勤', style: _buttonTextStyle)))),
                 ]),
+                */
                 Padding(
                   padding: allPadding,
                   child: Column(children: [
@@ -420,20 +413,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           );
                         }))
                   ]),
-
-                  /*
-                    child: DropdownButton<String>(
-                        value: _dropdownValue,
-                        items: nameList
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                              value: value, child: Text(value));
-                        }).toList(),
-                        onChanged: (String? value) {
-                          setState(() {
-                            _dropdownValue = value!;
-                          });
-                        })*/
                 )
               ])),
             )));
