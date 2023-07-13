@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class DataTableView extends StatefulWidget {
   final ScrollController? scrollController;
+  final List<DataColumn> dataColumnList;
   final List<DataRow>? dataRowList;
   final bool? isLoading;
 
   DataTableView(
       {super.key,
       ScrollController? scrollController,
+      required this.dataColumnList,
       List<DataRow>? dataRowList,
       bool? isLoading})
       //scrollController ??= ScrollController();
@@ -27,18 +29,13 @@ class _DataTableViewState extends State<DataTableView> {
         child: SingleChildScrollView(
             controller: widget.scrollController,
             child: DataTable(
+                headingRowHeight: 60,
                 dataRowMaxHeight: 60,
-                dataRowMinHeight: 40,
+                dataRowMinHeight: 60,
                 border: TableBorder.all(),
                 headingRowColor: MaterialStateColor.resolveWith(
                     (states) => const Color.fromARGB(255, 218, 218, 218)),
-                columns: const [
-                  DataColumn(label: FittedBox(child: Text('名前'))),
-                  //DataColumn(label: Text('日付')),
-                  DataColumn(label: FittedBox(child: Text('時刻'))),
-                  DataColumn(label: FittedBox(child: Text('種類'))),
-                  DataColumn(label: FittedBox(child: Text('削除'))),
-                ],
+                columns: widget.dataColumnList,
                 rows: widget.dataRowList!)));
   }
 }

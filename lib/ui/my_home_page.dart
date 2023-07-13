@@ -26,12 +26,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final sheetId = '2023年';
 
+  final List<String> _dataColumnLabels = ['名前', '時刻', '種類', '削除'];
+
   final List<DataRow> _dataRowList = [];
 
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
-
-  final TextStyle _buttonTextStyle = const TextStyle(fontSize: 15);
 
   final List<String> _nameList = <String>[
     'test',
@@ -89,13 +89,24 @@ class _MyHomePageState extends State<MyHomePage> {
     _get(now);
   }
 
-  DataRow _getDataRowByAttendData(AttendData data) {
+  List<DataColumn> _createDataColumnList() {
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+
+    List<DataColumn> columns = [];
+    for (int i = 0; i < _dataColumnLabels.length; ++i) {
+      String label = _dataColumnLabels[i];
+      columns.add(DataColumn(label: Text(label, style: style)));
+    }
+
+    return columns;
+  }
+
+  DataRow _createDataRowByAttendData(AttendData data) {
     String name = data.name;
-    //String date = data.dateStr;
-    //String time = data.timeStr;
     String dateTime = data.dateTimeStr;
     String type = data.type.toStr;
     Color color;
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     switch (data.type) {
       case AttendType.clockIn:
@@ -112,11 +123,10 @@ class _MyHomePageState extends State<MyHomePage> {
     DataRow dataRow = DataRow(
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
-          DataCell(FittedBox(child: Text(name))),
-          DataCell(FittedBox(child: Text(dateTime))),
-          DataCell(FittedBox(child: Text(type))),
-          DataCell(FittedBox(
-              child: IconButton(
+          DataCell(Text(name, style: style)),
+          DataCell(Text(dateTime, style: style)),
+          DataCell(Text(type, style: style)),
+          DataCell(IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
               debugPrint('presseed');
@@ -131,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 _deleteRow(data);
               }
             },
-          ))),
+          )),
         ]);
 
     return dataRow;
@@ -144,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _updateDataRow() {
     _dataRowList.clear();
     for (int i = 0; i < _dataList.length; ++i) {
-      _dataRowList.add(_getDataRowByAttendData(_dataList[i]));
+      _dataRowList.add(_createDataRowByAttendData(_dataList[i]));
     }
   }
 
@@ -276,17 +286,27 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    TextStyle? versionTextStyle = TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+    TextStyle? clockTextStyle = Theme.of(context).textTheme.headlineSmall;
+    TextStyle? buttonTextStyle = TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+    TextStyle? choiceTextStyle = Theme.of(context).textTheme.headlineSmall;
+
     return Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
           // the App.build method, and use it to set our appbar title.
           title: Text(widget.title),
-          actions: const [
+          actions: [
             Padding(
-                padding: EdgeInsets.only(right: 30),
+                padding: const EdgeInsets.only(right: 30),
                 child: Align(
                     alignment: Alignment.centerRight,
-                    child: Text('version: ${Constants.version}')))
+                    child: Text('version: ${Constants.version}',
+                        style: versionTextStyle)))
           ],
         ),
         body: SingleChildScrollView(
@@ -300,7 +320,7 @@ class _MyHomePageState extends State<MyHomePage> {
               width: double.infinity,
               height: MediaQuery.of(context).size.height * 0.05,
               child: Center(
-                child: Text(_clockString, style: const TextStyle(fontSize: 20)),
+                child: Text(_clockString, style: clockTextStyle),
               ),
             ),
             SizedBox(
@@ -329,6 +349,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           //child: DataTableView(
                           DataTableView(
                             scrollController: _scrollController,
+                            dataColumnList: _createDataColumnList(),
                             dataRowList: _dataRowList,
                           ),
                           if (_isLoading)
@@ -348,14 +369,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       height: 50,
                       child: ElevatedButton(
                           onPressed: _manualClockIn,
-                          child: Text('出勤', style: _buttonTextStyle)))),
+                          child: Text('出勤', style: buttonTextStyle)))),
               const SizedBox(width: 10),
               Expanded(
                   child: SizedBox(
                       height: 50,
                       child: ElevatedButton(
                           onPressed: _manualClockOut,
-                          child: Text('退勤', style: _buttonTextStyle)))),
+                          child: Text('退勤', style: buttonTextStyle)))),
             ]),
             Padding(
               padding: allPadding,
@@ -367,8 +388,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         List<ChoiceChip>.generate(_nameList.length,
                             (int index) {
                       return ChoiceChip(
-                        label: Text(_nameList[index],
-                            style: const TextStyle(fontSize: 20)),
+                        label: Text(_nameList[index], style: choiceTextStyle),
                         selectedColor: Colors.yellow,
                         selected: _choiceIndex == index,
                         onSelected: (selected) {
