@@ -26,17 +26,17 @@ class _DataTableViewState extends State<DataTableView> {
         decoration: BoxDecoration(border: Border.all(width: 1)),
         child: SingleChildScrollView(
             controller: widget.scrollController,
-            child: DataTable(
-                border: TableBorder.all(),
-                headingRowColor: MaterialStateColor.resolveWith(
-                    (states) => const Color.fromARGB(255, 218, 218, 218)),
-                columns: const [
-                  DataColumn(label: Text('名前')),
-                  //DataColumn(label: Text('日付')),
-                  DataColumn(label: Text('時刻')),
-                  DataColumn(label: Text('種類')),
-                  DataColumn(label: Text('削除')),
-                ],
-                rows: widget.dataRowList!)));
+                child: DataTable(
+                    border: TableBorder.all(),
+                    headingRowColor: MaterialStateColor.resolveWith(
+                        (states) => const Color.fromARGB(255, 218, 218, 218)),
+                    columns: const [
+                      DataColumn(label: Text('名前')),
+                      //DataColumn(label: Text('日付')),
+                      DataColumn(label: Text('時刻')),
+                      DataColumn(label: Text('種類')),
+                      DataColumn(label: Text('削除')),
+                    ],
+                    rows: widget.dataRowList!)));
   }
 }

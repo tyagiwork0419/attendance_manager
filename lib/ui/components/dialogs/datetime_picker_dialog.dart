@@ -50,11 +50,12 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
         title: Text(widget.selectedType.toStr),
-        content: DataTable(
-            headingRowColor: MaterialStateColor.resolveWith(
-                (states) => const Color.fromARGB(255, 218, 218, 218)),
-            border: TableBorder.all(),
-            columns: const [
+        content: FittedBox(
+            child: DataTable(
+                headingRowColor: MaterialStateColor.resolveWith(
+                    (states) => const Color.fromARGB(255, 218, 218, 218)),
+                border: TableBorder.all(),
+                columns: const [
               DataColumn(label: Text('名前')),
               //DataColumn(label: Text('種類')),
               //DataColumn(label: Text('日付')),
@@ -62,7 +63,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
               DataColumn(label: Text('時刻')),
               //DataColumn(label: Text('削除')),
             ],
-            rows: [
+                rows: [
               DataRow(cells: [
                 DataCell(Text(widget.selectedName)),
                 //DataCell(Text(widget.selectedType.toStr)),
@@ -101,7 +102,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                       });
                     })),
               ])
-            ]),
+            ])),
         actions: [
           ElevatedButton(
             child: const Text('決定'),
