@@ -112,12 +112,11 @@ class _MyHomePageState extends State<MyHomePage> {
     DataRow dataRow = DataRow(
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
-          DataCell(Text(name)),
-          //DataCell(Text(date)),
-          //DataCell(Text(time)),
-          DataCell(Text(dateTime)),
-          DataCell(Text(type)),
-          DataCell(IconButton(
+          DataCell(FittedBox(child: Text(name))),
+          DataCell(FittedBox(child: Text(dateTime))),
+          DataCell(FittedBox(child: Text(type))),
+          DataCell(FittedBox(
+              child: IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
               debugPrint('presseed');
@@ -132,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 _deleteRow(data);
               }
             },
-          )),
+          ))),
         ]);
 
     return dataRow;
@@ -183,56 +182,6 @@ class _MyHomePageState extends State<MyHomePage> {
         context: context,
         builder: (_) => ErrorDialog(title: '通信エラー', content: error));
   }
-
-/*
-  Future<void> _clockIn() async {
-    try {
-      List<AttendData> result = await _setClock(AttendType.clockIn);
-
-      _dataList.clear();
-      _dataList.addAll(result);
-
-      setState(() {
-        _updateDataRow();
-      });
-      await Future.delayed(wait100Milliseconds);
-      setState(() {
-        _scrollToEnd();
-      });
-    } catch (e) {
-      _showErrorDialog(e.toString());
-    }
-  }
-
-  Future<void> _clockOut() async {
-    try {
-      List<AttendData> result = await _setClock(AttendType.clockOut);
-      _dataList.clear();
-      _dataList.addAll(result);
-
-      setState(() {
-        _updateDataRow();
-      });
-      await Future.delayed(wait100Milliseconds);
-      setState(() {
-        _scrollToEnd();
-      });
-    } catch (e) {
-      _showErrorDialog(e.toString());
-    }
-  }
-
-  Future<List<AttendData>> _setClock(AttendType type) async {
-    DateTime now = DateTime.now();
-    String sheetName = _getSheetName(now);
-    String name = _chooseName;
-    AttendData data = AttendData(name, type, now);
-    List<AttendData> result =
-        await _attendanceService.setClock(sheetId, sheetName, data);
-
-    return result;
-  }
-  */
 
   Future<void> _deleteRow(AttendData data) async {
     try {
