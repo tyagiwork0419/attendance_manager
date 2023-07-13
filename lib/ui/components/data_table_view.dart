@@ -27,17 +27,17 @@ class _DataTableViewState extends State<DataTableView> {
         child: SingleChildScrollView(
             controller: widget.scrollController,
             child: DataTable(
-                dataRowMaxHeight: 40,
-                dataRowMinHeight: 30,
+                dataRowMaxHeight: 60,
+                dataRowMinHeight: 40,
                 border: TableBorder.all(),
                 headingRowColor: MaterialStateColor.resolveWith(
                     (states) => const Color.fromARGB(255, 218, 218, 218)),
                 columns: const [
-                  DataColumn(label: Text('名前')),
+                  DataColumn(label: FittedBox(child: Text('名前'))),
                   //DataColumn(label: Text('日付')),
-                  DataColumn(label: Text('時刻')),
-                  DataColumn(label: Text('種類')),
-                  DataColumn(label: Text('削除')),
+                  DataColumn(label: FittedBox(child: Text('時刻'))),
+                  DataColumn(label: FittedBox(child: Text('種類'))),
+                  DataColumn(label: FittedBox(child: Text('削除'))),
                 ],
                 rows: widget.dataRowList!)));
   }
