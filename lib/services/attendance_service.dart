@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
-import 'package:intl/intl.dart';
 
 import 'gas_client.dart';
 import '../models/attend_data.dart';
@@ -11,7 +10,6 @@ class AttendanceService {
   String accessToken = '';
 
   AttendanceService(this._gasClient);
-  final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
 
   Future<List<AttendData>> setClock(
       String fileName, String sheetName, AttendData data) async {
@@ -34,7 +32,7 @@ class AttendanceService {
     Map<String, Object> parameters = {
       'fileName': fileName,
       'sheetName': sheetName,
-      'dateTime': _dateTimeFormat.format(dateTime)
+      'dateTime': AttendData.dateTimeFormat.format(dateTime)
     };
 
     var jsonResult =

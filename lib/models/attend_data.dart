@@ -73,11 +73,16 @@ class AttendData {
   late DateTime dateTime;
   late Status status = Status.normal;
 
-  final DateFormat _dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
+  static final DateFormat dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
+  static final DateFormat shortDateTimeFormat = DateFormat('MM/dd HH:mm');
 
   AttendData(this.name, this.type, this.dateTime);
   String get dateTimeStr {
-    return _dateTimeFormat.format(dateTime);
+    return dateTimeFormat.format(dateTime);
+  }
+
+  String get shortDateTimeStr {
+    return shortDateTimeFormat.format(dateTime);
   }
 
   AttendData.fromJson(Map<String, dynamic> jsonMap)
@@ -85,7 +90,7 @@ class AttendData {
         name = jsonMap['name']!,
         type = AttendType.toAttendType(jsonMap['type']!),
         status = Status.toStatus(jsonMap['status']!) {
-    dateTime = _dateTimeFormat.parse(jsonMap['dateTime']);
+    dateTime = dateTimeFormat.parse(jsonMap['dateTime']);
   }
 
   Map<String, dynamic> toJson() {

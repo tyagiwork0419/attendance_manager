@@ -12,7 +12,6 @@ class DataTableView extends StatefulWidget {
       required this.dataColumnList,
       List<DataRow>? dataRowList,
       bool? isLoading})
-      //scrollController ??= ScrollController();
       : scrollController = scrollController ?? ScrollController(),
         dataRowList = dataRowList ?? <DataRow>[],
         isLoading = isLoading ?? false;
