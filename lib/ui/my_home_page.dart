@@ -51,7 +51,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String _clockString = '';
   late DateTime _selectedDate;
-  late DateFormat _clockFormat; // = DateFormat('yyyy/MM/dd  HH:mm:ss E');
   final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
@@ -72,17 +71,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     initializeDateFormatting('ja');
 
-    _clockFormat = DateFormat('yyyy/MM/dd  HH:mm:ss E', 'ja');
-
     DateTime now = DateTime.now();
-    _clockString = _clockFormat.format(now);
+    _clockString = AttendData.dateTimeFormat.format(now);
     _selectedDate = now;
     _isLoading = false;
 
     Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
       DateTime now = DateTime.now();
 
-      _clockString = _clockFormat.format(now);
+      _clockString = AttendData.dateTimeFormat.format(now);
       setState(() {});
     });
 
@@ -103,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DataRow _createDataRowByAttendData(AttendData data) {
     String name = data.name;
-    String dateTime = data.dateTimeStr;
+    String dateTime = data.shortDateTimeStr;
     String type = data.type.toStr;
     Color color;
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
