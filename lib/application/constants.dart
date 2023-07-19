@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
+
 class Constants {
-  static const String version = '0.0.12';
+  static const String version = '0.0.13';
 
   static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbz2rity5f2ge2Ku-orjVgD8J9b0hpvNFdeOnrSNGDrY5__4aFkSAHoeFOZUPft7F2N1:run';
+      'https://script.googleapis.com/v1/scripts/AKfycbwKrqcM5RrryEZbRI1zuF3g4DJnyrncgwp0oBXPatUSoZZcM7p1ztCVKgWO3iG1E6A_:run';
+
   static const String tokenUrl = 'https://oauth2.googleapis.com/token';
 
   static const String clientId =
@@ -13,4 +16,20 @@ class Constants {
   //final String scope =
   //'https://www.googleapis.com/auth/spreadsheets';
   //'https://www.googleapis.com/auth/drive';
+
+  //static const String
+  static const double paddingMiddium = 10;
+  static const String locale = 'ja';
+
+  static TextStyle getVersionTextStyle(BuildContext context) {
+    return TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+  }
+
+  static TextStyle getButtonTextStyle(BuildContext context) {
+    return TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+  }
 }

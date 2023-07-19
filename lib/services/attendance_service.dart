@@ -11,6 +11,14 @@ class AttendanceService {
 
   AttendanceService(this._gasClient);
 
+  String getSheetId(DateTime dateTime) {
+    return '${dateTime.year}年';
+  }
+
+  String getSheetName(DateTime dateTime) {
+    return '${dateTime.month}月';
+  }
+
   Future<List<AttendData>> setClock(
       String fileName, String sheetName, AttendData data) async {
     Map<String, dynamic> jsonObj = data.toJson();
@@ -27,7 +35,7 @@ class AttendanceService {
     return result;
   }
 
-  Future<List<AttendData>> getData(
+  Future<List<AttendData>> getByDateTime(
       String fileName, String sheetName, DateTime dateTime) async {
     Map<String, Object> parameters = {
       'fileName': fileName,
@@ -37,6 +45,21 @@ class AttendanceService {
 
     var jsonResult =
         await _gasClient.post('selectByDate', accessToken, parameters);
+
+    var result = _parseFromJson(jsonResult);
+    return result;
+  }
+
+  Future<List<AttendData>> getByName(
+      String fileName, String sheetName, String name) async {
+    Map<String, Object> parameters = {
+      'fileName': fileName,
+      'sheetName': sheetName,
+      'name': name,
+    };
+
+    var jsonResult =
+        await _gasClient.post('selectByName', accessToken, parameters);
 
     var result = _parseFromJson(jsonResult);
     return result;
