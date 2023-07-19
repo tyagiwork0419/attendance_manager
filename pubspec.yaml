@@ -34,10 +34,12 @@ dependencies:
   http:
   intl:
 
-  oauth2:
   url_launcher:
   uni_links:
   nil:
+  month_picker_dialog:
+  flutter_localizations:
+    sdk: flutter
 
 
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:attendance_manager/ui/timecard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
@@ -24,8 +25,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final sheetId = '2023年';
-
   final List<String> _dataColumnLabels = ['名前', '時刻', '種類', '削除'];
 
   final List<DataRow> _dataRowList = [];
@@ -43,8 +42,9 @@ class _MyHomePageState extends State<MyHomePage> {
     '西本'
   ];
 
-  final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(0, 10, 0, 10);
-  final EdgeInsets allPadding = const EdgeInsets.all(10);
+  final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(
+      0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
+  final EdgeInsets allPadding = const EdgeInsets.all(Constants.paddingMiddium);
 
   final ScrollController _scrollController = ScrollController();
   final Duration wait100Milliseconds = const Duration(milliseconds: 100);
@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
 
-    initializeDateFormatting('ja');
+    initializeDateFormatting(Constants.locale);
 
     DateTime now = DateTime.now();
     _clockString = AttendData.dateTimeFormat.format(now);
@@ -83,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {});
     });
 
-    _get(now);
+    _getByDateTime(now);
   }
 
   List<DataColumn> _createDataColumnList() {
@@ -144,10 +144,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return dataRow;
   }
 
-  String _getSheetName(DateTime dateTime) {
-    return '${dateTime.month}月';
-  }
-
   void _updateDataRow() {
     _dataRowList.clear();
     for (int i = 0; i < _dataList.length; ++i) {
@@ -160,13 +156,14 @@ class _MyHomePageState extends State<MyHomePage> {
         duration: const Duration(milliseconds: 100), curve: Curves.ease);
   }
 
-  Future<void> _get(DateTime dateTime) async {
-    String sheetName = _getSheetName(dateTime);
+  Future<void> _getByDateTime(DateTime dateTime) async {
+    String sheetId = _attendanceService.getSheetId(dateTime);
+    String sheetName = _attendanceService.getSheetName(dateTime);
 
     try {
       _isLoading = true;
       List<AttendData> result =
-          await _attendanceService.getData(sheetId, sheetName, dateTime);
+          await _attendanceService.getByDateTime(sheetId, sheetName, dateTime);
       _dataList.clear();
       _dataList.addAll(result);
       _isLoading = false;
@@ -194,7 +191,8 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       _isLoading = true;
       debugPrint('delete row');
-      String sheetName = _getSheetName(data.dateTime);
+      String sheetId = _attendanceService.getSheetId(data.dateTime);
+      String sheetName = _attendanceService.getSheetName(data.dateTime);
       data.status = Status.deleted;
       List<AttendData> result =
           await _attendanceService.updateById(sheetId, sheetName, data);
@@ -238,7 +236,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     try {
       _isLoading = true;
-      String sheetName = _getSheetName(dateTime);
+      String sheetId = _attendanceService.getSheetId(dateTime);
+      String sheetName = _attendanceService.getSheetName(dateTime);
       String name = _chooseName;
       AttendData data = AttendData(name, type, dateTime);
 
@@ -278,14 +277,12 @@ class _MyHomePageState extends State<MyHomePage> {
       _updateDataRow();
     });
 
-    _get(picked);
+    _getByDateTime(picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    TextStyle? versionTextStyle = TextStyle(
-        color: Colors.white,
-        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+    TextStyle? versionTextStyle = Constants.getVersionTextStyle(context);
     TextStyle? clockTextStyle = Theme.of(context).textTheme.headlineSmall;
     TextStyle? buttonTextStyle = TextStyle(
         color: Colors.white,
@@ -310,8 +307,6 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Padding(
           padding: allPadding,
           child: Center(
-              // Center is a layout widget. It takes a single child and positions it
-              // in the middle of the parent.
               child: Column(children: [
             SizedBox(
               width: double.infinity,
@@ -340,20 +335,13 @@ class _MyHomePageState extends State<MyHomePage> {
                         fit: StackFit.expand,
                         alignment: Alignment.center,
                         children: [
-                          //SizedBox(
-                          //   width: double.infinity,
-                          //  height: MediaQuery.of(context).size.height * 0.5,
-                          //child: DataTableView(
                           DataTableView(
                             scrollController: _scrollController,
                             dataColumnList: _createDataColumnList(),
                             dataRowList: _dataRowList,
                           ),
                           if (_isLoading)
-                            //if (true)
                             const Stack(fit: StackFit.expand, children: [
-                              //SizedBox(
-                              //width: double.infinity,
                               ColoredBox(
                                 color: Colors.black26,
                               ),
@@ -374,6 +362,22 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: ElevatedButton(
                           onPressed: _manualClockOut,
                           child: Text('退勤', style: buttonTextStyle)))),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => TimecardPage(
+                                        service: _attendanceService,
+                                        title: widget.title,
+                                        name: _chooseName,
+                                        dateTime: _selectedDate)));
+                          },
+                          child: Text('タイムカード', style: buttonTextStyle)))),
             ]),
             Padding(
               padding: allPadding,
