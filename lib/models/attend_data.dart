@@ -74,9 +74,11 @@ class AttendData {
   late Status status = Status.normal;
 
   static final DateFormat dateTimeFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
-  static final DateFormat shortDateTimeFormat = DateFormat('MM/dd E HH:mm');
+  static final DateFormat shortDateTimeFormat =
+      DateFormat('MM/dd(E) HH:mm', 'ja');
 
   AttendData(this.name, this.type, this.dateTime);
+
   String get dateTimeStr {
     return dateTimeFormat.format(dateTime);
   }

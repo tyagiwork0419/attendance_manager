@@ -25,8 +25,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<String> _dataColumnLabels = ['名前', '時刻', '種類', '削除'];
-
   final List<DataRow> _dataRowList = [];
 
   late GasClient _gasClient;
@@ -87,11 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   List<DataColumn> _createDataColumnList() {
+    List<String> dataColumnLabels = ['名前', '時刻', '種類', '削除'];
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<DataColumn> columns = [];
-    for (int i = 0; i < _dataColumnLabels.length; ++i) {
-      String label = _dataColumnLabels[i];
+    for (int i = 0; i < dataColumnLabels.length; ++i) {
+      String label = dataColumnLabels[i];
       columns.add(DataColumn(label: Text(label, style: style)));
     }
 
