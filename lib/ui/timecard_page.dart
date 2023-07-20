@@ -4,6 +4,7 @@ import 'package:month_picker_dialog/month_picker_dialog.dart';
 
 import '../application/constants.dart';
 import '../models/attend_data.dart';
+import '../models/timecard_data.dart';
 import '../services/attendance_service.dart';
 import 'components/dialogs/error_dialog.dart';
 
@@ -27,14 +28,14 @@ class TimecardPage extends StatefulWidget {
 class _TimecardPageState extends State<TimecardPage> {
   //final sheetId = '2023年';
   late AttendanceService _service;
-  final List<AttendData> _dataList = [];
+  List<AttendData> _dataList = [];
+  List<TimecardData> _timecardDataList = [];
 
   final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(
       0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
   final EdgeInsets allPadding = const EdgeInsets.all(Constants.paddingMiddium);
 
   final Duration wait100Milliseconds = const Duration(milliseconds: 100);
-  final List<String> _dataColumnLabels = ['名前', '時刻', '種類', '削除'];
 
   final List<DataRow> _dataRowList = [];
   final DateFormat _yearMonthFormat = DateFormat('yyyy/MM');
@@ -66,24 +67,33 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   List<DataColumn> _createDataColumnList() {
+    final List<String> dataColumnLabels = ['日付', '名前', '出勤', '退勤', '時間'];
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<DataColumn> columns = [];
-    for (int i = 0; i < _dataColumnLabels.length; ++i) {
-      String label = _dataColumnLabels[i];
+    for (int i = 0; i < dataColumnLabels.length; ++i) {
+      String label = dataColumnLabels[i];
       columns.add(DataColumn(label: Text(label, style: style)));
     }
 
     return columns;
   }
 
-  DataRow _createDataRowByAttendData(AttendData data) {
+  //DataRow _createDataRowByAttendData(AttendData data) {
+  DataRow _createDataRowByAttendData(TimecardData data) {
+    String date = data.date.toString();
     String name = data.name;
-    String dateTime = data.shortDateTimeStr;
-    String type = data.type.toStr;
-    Color color;
+    String clockInTime = data.clockInTime == null
+        ? ''
+        : DateFormat.Hm().format(data.clockInTime!);
+    String clockOutTime = data.clockOutTime == null
+        ? ''
+        : DateFormat.Hm().format(data.clockOutTime!);
+    String elapsedTime = data.elapsedTime;
+    Color color = const Color.fromARGB(255, 210, 255, 212);
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
+/*
     switch (data.type) {
       case AttendType.clockIn:
         color = const Color.fromARGB(255, 210, 255, 212);
@@ -95,18 +105,21 @@ class _TimecardPageState extends State<TimecardPage> {
       default:
         color = Colors.white;
     }
+    */
 
     DataRow dataRow = DataRow(
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
+          DataCell(Text(date, style: style)),
           DataCell(Text(name, style: style)),
-          DataCell(Text(dateTime, style: style)),
-          DataCell(Text(type, style: style)),
+          DataCell(Text(clockInTime, style: style)),
+          DataCell(Text(clockOutTime, style: style)),
+          DataCell(Text(elapsedTime, style: style)),
+          /*
           DataCell(IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () async {
               debugPrint('presseed');
-              /*
               bool? delete = await showDialog<bool>(
                   context: context,
                   barrierDismissible: false,
@@ -117,9 +130,9 @@ class _TimecardPageState extends State<TimecardPage> {
               if (delete!) {
                 _deleteRow(data);
               }
-              */
             },
           )),
+          */
         ]);
 
     return dataRow;
@@ -151,8 +164,10 @@ class _TimecardPageState extends State<TimecardPage> {
 
   void _updateDataRow() {
     _dataRowList.clear();
-    for (int i = 0; i < _dataList.length; ++i) {
-      _dataRowList.add(_createDataRowByAttendData(_dataList[i]));
+    _timecardDataList.clear();
+    _timecardDataList = TimecardData.createList(_dataList);
+    for (int i = 0; i < _timecardDataList.length; ++i) {
+      _dataRowList.add(_createDataRowByAttendData(_timecardDataList[i]));
     }
   }
 
