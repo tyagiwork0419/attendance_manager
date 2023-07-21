@@ -25,16 +25,19 @@ class _DataTableViewState extends State<DataTableView> {
   Widget build(BuildContext context) {
     return Container(
         decoration: BoxDecoration(border: Border.all()),
-        child: SingleChildScrollView(
-            controller: widget.scrollController,
-            child: DataTable(
-                headingRowHeight: 60,
-                dataRowMaxHeight: 60,
-                dataRowMinHeight: 60,
-                border: TableBorder.all(),
-                headingRowColor: MaterialStateColor.resolveWith(
-                    (states) => const Color.fromARGB(255, 218, 218, 218)),
-                columns: widget.dataColumnList,
-                rows: widget.dataRowList!)));
+        child: ListView(children: [
+          SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              controller: widget.scrollController,
+              child: DataTable(
+                  headingRowHeight: 60,
+                  dataRowMaxHeight: 60,
+                  dataRowMinHeight: 60,
+                  border: TableBorder.all(),
+                  headingRowColor: MaterialStateColor.resolveWith(
+                      (states) => const Color.fromARGB(255, 218, 218, 218)),
+                  columns: widget.dataColumnList,
+                  rows: widget.dataRowList!))
+        ]));
   }
 }

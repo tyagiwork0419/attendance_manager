@@ -212,6 +212,45 @@ class _TimecardPageState extends State<TimecardPage> {
     _getByName(widget.name, _selectedDate);
   }
 
+  Widget _monthButton() {
+    return Center(
+        child: ElevatedButton(
+      child: Text(_yearMonthFormat.format(_selectedDate)),
+      onPressed: () {
+        _selectMonth();
+      },
+    ));
+  }
+
+  Widget _table() {
+    return Container(
+        decoration: BoxDecoration(border: Border.all()),
+        child: ListView(children: [
+          SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                  sortColumnIndex: 1,
+                  sortAscending: true,
+                  headingRowHeight: 60,
+                  dataRowMaxHeight: 60,
+                  dataRowMinHeight: 60,
+                  border: TableBorder.all(),
+                  headingRowColor: MaterialStateColor.resolveWith(
+                      (states) => const Color.fromARGB(255, 218, 218, 218)),
+                  columns: _createDataColumnList(),
+                  rows: _dataRowList))
+        ]));
+  }
+
+  Widget _loading() {
+    return const Stack(fit: StackFit.expand, children: [
+      ColoredBox(
+        color: Colors.black26,
+      ),
+      Center(child: CircularProgressIndicator()),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     TextStyle? buttonTextStyle = TextStyle(
@@ -238,13 +277,7 @@ class _TimecardPageState extends State<TimecardPage> {
                   SizedBox(
                       width: double.infinity,
                       height: MediaQuery.of(context).size.height * 0.05,
-                      child: Center(
-                          child: ElevatedButton(
-                        child: Text(_yearMonthFormat.format(_selectedDate)),
-                        onPressed: () {
-                          _selectMonth();
-                        },
-                      ))),
+                      child: _monthButton()),
                   SizedBox(
                       width: double.infinity,
                       height: MediaQuery.of(context).size.height * 0.8,
@@ -252,30 +285,8 @@ class _TimecardPageState extends State<TimecardPage> {
                           fit: StackFit.expand,
                           alignment: Alignment.center,
                           children: [
-                            Container(
-                                decoration: BoxDecoration(border: Border.all()),
-                                child: SingleChildScrollView(
-                                    child: DataTable(
-                                        sortColumnIndex: 1,
-                                        sortAscending: true,
-                                        headingRowHeight: 60,
-                                        dataRowMaxHeight: 60,
-                                        dataRowMinHeight: 60,
-                                        border: TableBorder.all(),
-                                        headingRowColor:
-                                            MaterialStateColor.resolveWith(
-                                                (states) =>
-                                                    const Color.fromARGB(
-                                                        255, 218, 218, 218)),
-                                        columns: _createDataColumnList(),
-                                        rows: _dataRowList))),
-                            if (_isLoading)
-                              const Stack(fit: StackFit.expand, children: [
-                                ColoredBox(
-                                  color: Colors.black26,
-                                ),
-                                Center(child: CircularProgressIndicator()),
-                              ])
+                            _table(),
+                            if (_isLoading) _loading(),
                           ])),
                   /*
                   Row(mainAxisAlignment: MainAxisAlignment.center, children: [

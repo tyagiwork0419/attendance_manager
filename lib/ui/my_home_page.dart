@@ -279,15 +279,105 @@ class _MyHomePageState extends State<MyHomePage> {
     _getByDateTime(picked);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _version() {
     TextStyle? versionTextStyle = Constants.getVersionTextStyle(context);
+    return Text('version: ${Constants.version}', style: versionTextStyle);
+  }
+
+  Widget _clock() {
     TextStyle? clockTextStyle = Theme.of(context).textTheme.headlineSmall;
+    return Center(
+      child: Text(_clockString, style: clockTextStyle),
+    );
+  }
+
+  Widget _dateButton() {
+    return Center(
+        child: ElevatedButton(
+      child: Text(_dateFormat.format(_selectedDate)),
+      onPressed: () {
+        _selectDate();
+      },
+    ));
+  }
+
+  Widget _table() {
+    return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
+      DataTableView(
+        scrollController: _scrollController,
+        dataColumnList: _createDataColumnList(),
+        dataRowList: _dataRowList,
+      ),
+      if (_isLoading)
+        const Stack(fit: StackFit.expand, children: [
+          ColoredBox(
+            color: Colors.black26,
+          ),
+          Center(child: CircularProgressIndicator()),
+        ]),
+    ]);
+  }
+
+  Widget _buttons() {
     TextStyle? buttonTextStyle = TextStyle(
         color: Colors.white,
         fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
-    TextStyle? choiceTextStyle = Theme.of(context).textTheme.headlineSmall;
 
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Expanded(
+          child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                  onPressed: _manualClockIn,
+                  child: Text('出勤', style: buttonTextStyle)))),
+      const SizedBox(width: 10),
+      Expanded(
+          child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                  onPressed: _manualClockOut,
+                  child: Text('退勤', style: buttonTextStyle)))),
+      const SizedBox(width: 10),
+      Expanded(
+          child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => TimecardPage(
+                                service: _attendanceService,
+                                title: widget.title,
+                                name: _chooseName,
+                                dateTime: _selectedDate)));
+                  },
+                  child: Text('タイムカード', style: buttonTextStyle)))),
+    ]);
+  }
+
+  Widget _nameButtons() {
+    TextStyle? choiceTextStyle = Theme.of(context).textTheme.headlineSmall;
+    return Column(children: [
+      Wrap(
+          spacing: 10,
+          children:
+              // _choiceChipList)]),
+              List<ChoiceChip>.generate(_nameList.length, (int index) {
+            return ChoiceChip(
+              label: Text(_nameList[index], style: choiceTextStyle),
+              selectedColor: Colors.yellow,
+              selected: _choiceIndex == index,
+              onSelected: (selected) {
+                _choiceIndex = index;
+              },
+            );
+          }))
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           // Here we take the value from the MyHomePage object that was created by
@@ -296,10 +386,8 @@ class _MyHomePageState extends State<MyHomePage> {
           actions: [
             Padding(
                 padding: const EdgeInsets.only(right: 30),
-                child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('version: ${Constants.version}',
-                        style: versionTextStyle)))
+                child:
+                    Align(alignment: Alignment.centerRight, child: _version()))
           ],
         ),
         body: SingleChildScrollView(
@@ -308,96 +396,21 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Center(
               child: Column(children: [
             SizedBox(
-              width: double.infinity,
-              height: MediaQuery.of(context).size.height * 0.05,
-              child: Center(
-                child: Text(_clockString, style: clockTextStyle),
-              ),
-            ),
+                width: double.infinity,
+                height: MediaQuery.of(context).size.height * 0.05,
+                child: _clock()),
             SizedBox(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height * 0.05,
-                child: Center(
-                    child: ElevatedButton(
-                  child: Text(_dateFormat.format(_selectedDate)),
-                  onPressed: () {
-                    _selectDate();
-                  },
-                ))),
+                child: _dateButton()),
             Padding(
                 padding: topBottomPadding,
-                //child: Stack(
                 child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.5,
-                    child: Stack(
-                        fit: StackFit.expand,
-                        alignment: Alignment.center,
-                        children: [
-                          DataTableView(
-                            scrollController: _scrollController,
-                            dataColumnList: _createDataColumnList(),
-                            dataRowList: _dataRowList,
-                          ),
-                          if (_isLoading)
-                            const Stack(fit: StackFit.expand, children: [
-                              ColoredBox(
-                                color: Colors.black26,
-                              ),
-                              Center(child: CircularProgressIndicator()),
-                            ]),
-                        ]))),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Expanded(
-                  child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                          onPressed: _manualClockIn,
-                          child: Text('出勤', style: buttonTextStyle)))),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                          onPressed: _manualClockOut,
-                          child: Text('退勤', style: buttonTextStyle)))),
-              const SizedBox(width: 10),
-              Expanded(
-                  child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => TimecardPage(
-                                        service: _attendanceService,
-                                        title: widget.title,
-                                        name: _chooseName,
-                                        dateTime: _selectedDate)));
-                          },
-                          child: Text('タイムカード', style: buttonTextStyle)))),
-            ]),
-            Padding(
-              padding: allPadding,
-              child: Column(children: [
-                Wrap(
-                    spacing: 10,
-                    children:
-                        // _choiceChipList)]),
-                        List<ChoiceChip>.generate(_nameList.length,
-                            (int index) {
-                      return ChoiceChip(
-                        label: Text(_nameList[index], style: choiceTextStyle),
-                        selectedColor: Colors.yellow,
-                        selected: _choiceIndex == index,
-                        onSelected: (selected) {
-                          _choiceIndex = index;
-                        },
-                      );
-                    }))
-              ]),
-            )
+                    child: _table())),
+            _buttons(),
+            Padding(padding: allPadding, child: _nameButtons())
           ])),
         )));
   }
