@@ -62,6 +62,10 @@ class AttendanceService {
         await _gasClient.post('selectByName', accessToken, parameters);
 
     var result = _parseFromJson(jsonResult);
+
+    result.sort((a, b) {
+      return a.dateTime.compareTo(b.dateTime);
+    });
     return result;
   }
 

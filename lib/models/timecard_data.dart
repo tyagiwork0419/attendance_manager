@@ -1,31 +1,28 @@
-import 'package:intl/intl.dart';
-
+//import 'package:intl/intl.dart';
 import 'attend_data.dart';
+import 'datetime_utility.dart';
 
 class TimecardData {
   late String name;
+  late DateTime? date;
+
   late DateTime? clockInTime;
   late DateTime? clockOutTime;
 
-  final DateFormat _dateFormat = DateFormat('MM/dd(E)', 'ja');
-
-  TimecardData(this.name, {this.clockInTime, this.clockOutTime});
+  TimecardData(this.name, {this.clockInTime, this.clockOutTime}) {
+    if (clockInTime != null) {
+      date = DateTime(clockInTime!.year, clockInTime!.month, clockInTime!.day);
+    } else if (clockOutTime != null) {
+      date =
+          DateTime(clockOutTime!.year, clockOutTime!.month, clockOutTime!.day);
+    } else {
+      date = null;
+    }
+  }
 
   TimecardData copyWith() {
     return TimecardData(name,
         clockInTime: clockInTime, clockOutTime: clockOutTime);
-  }
-
-  String get date {
-    if (clockInTime != null) {
-      return _dateFormat.format(clockInTime!);
-    }
-
-    if (clockOutTime != null) {
-      return _dateFormat.format(clockOutTime!);
-    }
-
-    return '';
   }
 
   String get elapsedTime {
@@ -40,7 +37,7 @@ class TimecardData {
     return elapsed.toStringAsFixed(1);
   }
 
-  static List<TimecardData> createList(List<AttendData> attendDataList) {
+  static List<TimecardData> create(List<AttendData> attendDataList) {
     List<TimecardData> dataList = [];
     AttendData attendData;
     TimecardData? data;
@@ -50,37 +47,90 @@ class TimecardData {
       attendData = attendDataList[i];
 
       switch (state) {
+        // データ作成時（出勤データを期待）
         case CreateState.setClockIn:
-          if (attendData.type == AttendType.clockIn) {
-            data =
-                TimecardData(attendData.name, clockInTime: attendData.dateTime);
-            state = CreateState.setClockOut;
-            if (i == attendDataList.length - 1) {
+          switch (attendData.type) {
+            case AttendType.clockIn:
+              data = TimecardData(attendData.name,
+                  clockInTime: attendData.dateTime);
+              //最後のデータならリストに追加
+              if (i == attendDataList.length - 1) {
+                //月末に24時超えたとき
+                if (data.date!.isEndDayOfMonth) {
+                  data.clockOutTime = data.date!.endOfDay;
+                }
+                dataList.add(data.copyWith());
+                break;
+              }
+
+              state = CreateState.setClockOut;
+              break;
+
+            case AttendType.clockOut:
+              data = TimecardData(attendData.name,
+                  clockOutTime: attendData.dateTime);
+              // 先月末から24時回った場合
+              if (data.date!.isStartDayOfMonth) {
+                data.clockInTime = data.date!.startOfDay;
+              }
               dataList.add(data.copyWith());
-            }
-            break;
-          } else if (attendData.type == AttendType.clockOut) {
-            data = TimecardData(attendData.name,
-                clockOutTime: attendData.dateTime);
-            dataList.add(data.copyWith());
-            break;
+              break;
+
+            case AttendType.none:
+              break;
           }
           break;
-        case CreateState.setClockOut:
-          if (attendData.type == AttendType.clockIn) {
-            dataList.add(data!.copyWith());
-            data =
-                TimecardData(attendData.name, clockInTime: attendData.dateTime);
-            if (i == attendDataList.length - 1) {
-              dataList.add(data.copyWith());
-            }
 
-            break;
-          } else if (attendData.type == AttendType.clockOut) {
-            data!.clockOutTime = attendData.dateTime;
-            dataList.add(data.copyWith());
-            state = CreateState.setClockIn;
-            break;
+        // 退勤データ入力時（退勤データを期待）
+        case CreateState.setClockOut:
+          switch (attendData.type) {
+            case AttendType.clockIn:
+              print('error: 退勤データが足りません');
+              dataList.add(data!.copyWith());
+              state = CreateState.setClockIn;
+              break;
+
+            case AttendType.clockOut:
+              //data!.clockOutTime = attendData.dateTime;
+              DateTime clockOutTime = attendData.dateTime;
+
+              int dayDiff = data!.clockInTime!.difference(clockOutTime).inDays;
+
+              if (dayDiff == 0) {
+                data.clockOutTime = clockOutTime;
+                dataList.add(data.copyWith());
+                state = CreateState.setClockIn;
+                break;
+              }
+
+              DateTime startOfDay = data.date!.startOfDay;
+              DateTime endOfDay = data.date!.endOfDay;
+
+              List<TimecardData> diffDataList = [];
+              data.clockOutTime = endOfDay;
+
+              diffDataList.add(data.copyWith());
+
+              for (int i = 0; i < dayDiff; ++i) {
+                startOfDay.add(const Duration(days: 1));
+                endOfDay.add(const Duration(days: 1));
+                TimecardData diffData =
+                    TimecardData(attendData.name, clockInTime: startOfDay);
+                if (i == dayDiff - 1) {
+                  diffData.clockOutTime = clockOutTime;
+                } else {
+                  diffData.clockOutTime = endOfDay;
+                }
+
+                diffDataList.add(diffData);
+              }
+
+              dataList.addAll(diffDataList);
+              state = CreateState.setClockIn;
+              break;
+
+            case AttendType.none:
+              break;
           }
           break;
       }
