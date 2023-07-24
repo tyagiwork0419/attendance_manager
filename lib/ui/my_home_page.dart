@@ -14,6 +14,7 @@ import 'components/data_table_view.dart';
 import 'components/dialogs/datetime_picker_dialog.dart';
 import 'components/dialogs/delete_dialog.dart';
 import 'components/dialogs/error_dialog.dart';
+import 'components/my_app_bar.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -31,7 +32,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late AttendanceService _attendanceService;
 
   final List<String> _nameList = <String>[
-    'test',
+    //'test',
     '八木',
     '大滝',
     '山本',
@@ -47,9 +48,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _scrollController = ScrollController();
   final Duration wait100Milliseconds = const Duration(milliseconds: 100);
 
-  String _clockString = '';
+  //String _clockString = '';
+  late DateTime _clockDate;
   late DateTime _selectedDate;
-  final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
+  //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
   late bool _isLoading;
@@ -70,14 +72,16 @@ class _MyHomePageState extends State<MyHomePage> {
     initializeDateFormatting(Constants.locale);
 
     DateTime now = DateTime.now();
-    _clockString = AttendData.dateTimeFormat.format(now);
+    //_clockString = AttendData.dateTimeFormat.format(now);
+    _clockDate = now;
     _selectedDate = now;
     _isLoading = false;
 
     Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
       DateTime now = DateTime.now();
+      _clockDate = now;
 
-      _clockString = AttendData.dateTimeFormat.format(now);
+      //_clockString = AttendData.dateTimeFormat.format(now);
       setState(() {});
     });
 
@@ -91,7 +95,8 @@ class _MyHomePageState extends State<MyHomePage> {
     List<DataColumn> columns = [];
     for (int i = 0; i < dataColumnLabels.length; ++i) {
       String label = dataColumnLabels[i];
-      columns.add(DataColumn(label: Text(label, style: style)));
+      columns
+          .add(DataColumn(label: Expanded(child: Text(label, style: style))));
     }
 
     return columns;
@@ -279,43 +284,24 @@ class _MyHomePageState extends State<MyHomePage> {
     _getByDateTime(picked);
   }
 
-  Widget _version() {
-    TextStyle? versionTextStyle = Constants.getVersionTextStyle(context);
-    return Text('version: ${Constants.version}', style: versionTextStyle);
-  }
-
-  Widget _clock() {
+  Widget _clock(DateTime clock) {
     TextStyle? clockTextStyle = Theme.of(context).textTheme.headlineSmall;
+    String clockString = AttendData.dateTimeFormat.format(clock);
     return Center(
-      child: Text(_clockString, style: clockTextStyle),
+      child: Text(clockString, style: clockTextStyle),
     );
   }
 
-  Widget _dateButton() {
+  Widget _dateButton(DateTime date, VoidCallback onPressed) {
+    final DateFormat dateFormat = DateFormat('yyyy/MM/dd');
     return Center(
         child: ElevatedButton(
-      child: Text(_dateFormat.format(_selectedDate)),
+      //child: Text(_dateFormat.format(_selectedDate)),
+      child: Text(dateFormat.format(date)),
       onPressed: () {
-        _selectDate();
+        onPressed();
       },
     ));
-  }
-
-  Widget _table() {
-    return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
-      DataTableView(
-        scrollController: _scrollController,
-        dataColumnList: _createDataColumnList(),
-        dataRowList: _dataRowList,
-      ),
-      if (_isLoading)
-        const Stack(fit: StackFit.expand, children: [
-          ColoredBox(
-            color: Colors.black26,
-          ),
-          Center(child: CircularProgressIndicator()),
-        ]),
-    ]);
   }
 
   Widget _buttons() {
@@ -379,17 +365,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          // Here we take the value from the MyHomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
-          title: Text(widget.title),
-          actions: [
-            Padding(
-                padding: const EdgeInsets.only(right: 30),
-                child:
-                    Align(alignment: Alignment.centerRight, child: _version()))
-          ],
-        ),
+        appBar: MyAppBar(title: widget.title, version: Constants.version)
+            .appBar(context),
         body: SingleChildScrollView(
             child: Padding(
           padding: allPadding,
@@ -398,17 +375,21 @@ class _MyHomePageState extends State<MyHomePage> {
             SizedBox(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height * 0.05,
-                child: _clock()),
+                child: _clock(_clockDate)),
             SizedBox(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height * 0.05,
-                child: _dateButton()),
+                child: _dateButton(_selectedDate, _selectDate)),
             Padding(
                 padding: topBottomPadding,
                 child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.5,
-                    child: _table())),
+                    child: DataTableView(
+                        scrollController: _scrollController,
+                        columns: _createDataColumnList(),
+                        rows: _dataRowList,
+                        isLoading: _isLoading))),
             _buttons(),
             Padding(padding: allPadding, child: _nameButtons())
           ])),

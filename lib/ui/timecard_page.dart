@@ -1,12 +1,16 @@
+import 'package:attendance_manager/models/monthly_timecard.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 
 import '../application/constants.dart';
 import '../models/attend_data.dart';
+import '../models/daily_timecard.dart';
 import '../models/timecard_data.dart';
 import '../services/attendance_service.dart';
+import 'components/data_table_view.dart';
 import 'components/dialogs/error_dialog.dart';
+import 'components/my_app_bar.dart';
 
 class TimecardPage extends StatefulWidget {
   final AttendanceService service;
@@ -27,8 +31,9 @@ class TimecardPage extends StatefulWidget {
 
 class _TimecardPageState extends State<TimecardPage> {
   //final sheetId = '2023年';
+  late String _name;
   late AttendanceService _service;
-  List<AttendData> _dataList = [];
+  final List<AttendData> _dataList = [];
   List<TimecardData> _timecardDataList = [];
 
   final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(
@@ -53,10 +58,10 @@ class _TimecardPageState extends State<TimecardPage> {
 
     DateTime now = DateTime.now();
 
-    String name = widget.name;
+    _name = widget.name;
     _selectedDate = widget.dateTime;
 
-    _getByName(name, now);
+    _getByName(_name, now);
   }
 
   void _showErrorDialog(String error) {
@@ -79,9 +84,9 @@ class _TimecardPageState extends State<TimecardPage> {
     return columns;
   }
 
-  //DataRow _createDataRowByAttendData(AttendData data) {
-  DataRow _createDataRowByAttendData(TimecardData data) {
-    String date = data.date.toString();
+/*
+  DataRow _createDataRowByDailyTimecard(DailyTimecard data) {
+    String date = DateFormat('MM/dd(E)', 'ja').format(data.date);
     String name = data.name;
     String clockInTime = data.clockInTime == null
         ? ''
@@ -93,19 +98,47 @@ class _TimecardPageState extends State<TimecardPage> {
     Color color = const Color.fromARGB(255, 210, 255, 212);
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
-/*
-    switch (data.type) {
-      case AttendType.clockIn:
-        color = const Color.fromARGB(255, 210, 255, 212);
+
+    DataRow dataRow = DataRow(
+        color: MaterialStateColor.resolveWith((states) => color),
+        cells: [
+          DataCell(Text(date, style: style)),
+          DataCell(Text(name, style: style)),
+          DataCell(Text(clockInTime, style: style)),
+          DataCell(Text(clockOutTime, style: style)),
+          DataCell(Text(elapsedTime, style: style)),
+       ]);
+
+    return dataRow;
+  }
+  */
+
+  DataRow _createDataRowByAttendData(DateTime dateTime, TimecardData data) {
+    //String date = DateFormat('MM/dd(E)', 'ja').format(data.date!);
+    String date = DateFormat('MM/dd(E)', 'ja').format(dateTime);
+    String name = data.name;
+    String clockInTime = data.clockInTime == null
+        ? ''
+        : DateFormat.Hm().format(data.clockInTime!);
+    String clockOutTime = data.clockOutTime == null
+        ? ''
+        : DateFormat.Hm().format(data.clockOutTime!);
+    String elapsedTime = data.elapsedTime;
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+    //Color color = const Color.fromARGB(255, 210, 255, 212);
+    Color color;
+
+    switch (dateTime.weekday) {
+      case DateTime.saturday:
+        color = const Color.fromARGB(255, 255, 213, 227);
         break;
-      case AttendType.clockOut:
+      case DateTime.sunday:
         color = const Color.fromARGB(255, 255, 213, 227);
         break;
 
       default:
-        color = Colors.white;
+        color = const Color.fromARGB(255, 210, 255, 212);
     }
-    */
 
     DataRow dataRow = DataRow(
         color: MaterialStateColor.resolveWith((states) => color),
@@ -147,9 +180,6 @@ class _TimecardPageState extends State<TimecardPage> {
       List<AttendData> result =
           await _service.getByName(sheetId, sheetName, name);
 
-      result.sort((a, b) {
-        return a.dateTime.compareTo(b.dateTime);
-      });
       _dataList.clear();
       _dataList.addAll(result);
       _isLoading = false;
@@ -165,10 +195,30 @@ class _TimecardPageState extends State<TimecardPage> {
   void _updateDataRow() {
     _dataRowList.clear();
     _timecardDataList.clear();
-    _timecardDataList = TimecardData.createList(_dataList);
+
+    Map<int, MonthlyTimecard> monthlyTimecardMap = MonthlyTimecard.create(
+        _name, _selectedDate.year, _selectedDate.month, _dataList);
+
+/*
+    _timecardDataList = TimecardData.create(_dataList);
     for (int i = 0; i < _timecardDataList.length; ++i) {
       _dataRowList.add(_createDataRowByAttendData(_timecardDataList[i]));
     }
+    */
+    monthlyTimecardMap[_selectedDate.month]!
+        .dataMap
+        .forEach((day, dailyTimecard) {
+      List<TimecardData> dataList = dailyTimecard.dataList;
+      for (int i = 0; i < dataList.length; ++i) {
+        TimecardData data = dailyTimecard.dataList[i];
+        _dataRowList.add(_createDataRowByAttendData(data.date!, data));
+      }
+
+      if (dataList.isEmpty) {
+        _dataRowList.add(_createDataRowByAttendData(
+            dailyTimecard.date, TimecardData(dailyTimecard.name)));
+      }
+    });
   }
 
   Future<void> _getByDateTime(DateTime dateTime) async {
@@ -222,53 +272,32 @@ class _TimecardPageState extends State<TimecardPage> {
     ));
   }
 
-  Widget _table() {
-    return Container(
-        decoration: BoxDecoration(border: Border.all()),
-        child: ListView(children: [
-          SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                  sortColumnIndex: 1,
-                  sortAscending: true,
-                  headingRowHeight: 60,
-                  dataRowMaxHeight: 60,
-                  dataRowMinHeight: 60,
-                  border: TableBorder.all(),
-                  headingRowColor: MaterialStateColor.resolveWith(
-                      (states) => const Color.fromARGB(255, 218, 218, 218)),
-                  columns: _createDataColumnList(),
-                  rows: _dataRowList))
-        ]));
-  }
+  Widget _buttons() {
+    TextStyle? buttonTextStyle = TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
 
-  Widget _loading() {
-    return const Stack(fit: StackFit.expand, children: [
-      ColoredBox(
-        color: Colors.black26,
-      ),
-      Center(child: CircularProgressIndicator()),
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Expanded(
+          child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                  onPressed: () {},
+                  child: Text('出勤', style: buttonTextStyle)))),
+      const SizedBox(width: 10),
+      Expanded(
+          child: SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                  onPressed: () {}, child: Text('退勤', style: buttonTextStyle))))
     ]);
   }
 
   @override
   Widget build(BuildContext context) {
-    TextStyle? buttonTextStyle = TextStyle(
-        color: Colors.white,
-        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
-
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-          actions: [
-            Padding(
-                padding: const EdgeInsets.only(right: 30),
-                child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('version: ${Constants.version}',
-                        style: Constants.getVersionTextStyle(context))))
-          ],
-        ),
+        appBar: MyAppBar(title: widget.title, version: Constants.version)
+            .appBar(context),
         body: SingleChildScrollView(
             child: Padding(
                 padding: allPadding,
@@ -279,31 +308,14 @@ class _TimecardPageState extends State<TimecardPage> {
                       height: MediaQuery.of(context).size.height * 0.05,
                       child: _monthButton()),
                   SizedBox(
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.8,
-                      child: Stack(
-                          fit: StackFit.expand,
-                          alignment: Alignment.center,
-                          children: [
-                            _table(),
-                            if (_isLoading) _loading(),
-                          ])),
-                  /*
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Expanded(
-                        child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                                onPressed: () {},
-                                child: Text('出勤', style: buttonTextStyle)))),
-                    const SizedBox(width: 10),
-                    Expanded(
-                        child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                                onPressed: () {},
-                                child: Text('退勤', style: buttonTextStyle)))),
-                  ])*/
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height * 0.8,
+                    child: DataTableView(
+                        columns: _createDataColumnList(),
+                        rows: _dataRowList,
+                        isLoading: _isLoading),
+                  ),
+                  //_buttons(),
                 ])))));
   }
 }

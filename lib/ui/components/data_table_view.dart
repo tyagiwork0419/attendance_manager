@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 
 class DataTableView extends StatefulWidget {
   final ScrollController? scrollController;
-  final List<DataColumn> dataColumnList;
-  final List<DataRow>? dataRowList;
+  final List<DataColumn> columns;
+  final List<DataRow>? rows;
   final bool? isLoading;
 
   DataTableView(
       {super.key,
       ScrollController? scrollController,
-      required this.dataColumnList,
-      List<DataRow>? dataRowList,
+      required this.columns,
+      List<DataRow>? rows,
       bool? isLoading})
       : scrollController = scrollController ?? ScrollController(),
-        dataRowList = dataRowList ?? <DataRow>[],
+        rows = rows ?? <DataRow>[],
         isLoading = isLoading ?? false;
 
   @override
@@ -21,23 +21,35 @@ class DataTableView extends StatefulWidget {
 }
 
 class _DataTableViewState extends State<DataTableView> {
+  Widget _loading() {
+    return const Stack(fit: StackFit.expand, children: [
+      ColoredBox(
+        color: Colors.black26,
+      ),
+      Center(child: CircularProgressIndicator()),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-        decoration: BoxDecoration(border: Border.all()),
-        child: ListView(children: [
-          SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              controller: widget.scrollController,
-              child: DataTable(
-                  headingRowHeight: 60,
-                  dataRowMaxHeight: 60,
-                  dataRowMinHeight: 60,
-                  border: TableBorder.all(),
-                  headingRowColor: MaterialStateColor.resolveWith(
-                      (states) => const Color.fromARGB(255, 218, 218, 218)),
-                  columns: widget.dataColumnList,
-                  rows: widget.dataRowList!))
-        ]));
+    return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
+      Container(
+          decoration: BoxDecoration(border: Border.all()),
+          child: ListView(children: [
+            SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                controller: widget.scrollController,
+                child: DataTable(
+                    headingRowHeight: 60,
+                    dataRowMaxHeight: 60,
+                    dataRowMinHeight: 60,
+                    border: TableBorder.all(),
+                    headingRowColor: MaterialStateColor.resolveWith(
+                        (states) => const Color.fromARGB(255, 218, 218, 218)),
+                    columns: widget.columns,
+                    rows: widget.rows!))
+          ])),
+      if (widget.isLoading!) _loading(),
+    ]);
   }
 }
