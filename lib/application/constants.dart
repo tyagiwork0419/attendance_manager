@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Constants {
   const Constants();
 
-  static const String version = '0.0.17';
+  static const String version = '0.0.18';
 
   static const String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbwKrqcM5RrryEZbRI1zuF3g4DJnyrncgwp0oBXPatUSoZZcM7p1ztCVKgWO3iG1E6A_:run';
