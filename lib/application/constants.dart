@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class Constants {
-  const Constants();
+  //const Constants();
 
-  static const String version = '0.0.18';
+  static const String version = '0.0.19';
 
   static const String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbwKrqcM5RrryEZbRI1zuF3g4DJnyrncgwp0oBXPatUSoZZcM7p1ztCVKgWO3iG1E6A_:run';
@@ -37,6 +37,10 @@ class Constants {
       0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
   static const EdgeInsets allPadding = EdgeInsets.all(Constants.paddingMiddium);
   static const Duration wait100Milliseconds = Duration(milliseconds: 100);
+
+  static const Color green = Color.fromARGB(255, 210, 255, 212);
+  static const Color red = Color.fromARGB(255, 255, 213, 227);
+  static const Color gray = Color.fromARGB(255, 218, 218, 218);
 
   static TextStyle getVersionTextStyle(BuildContext context) {
     return TextStyle(

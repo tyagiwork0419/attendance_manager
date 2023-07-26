@@ -31,10 +31,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final ScrollController _scrollController = ScrollController();
 
-  //String _clockString = '';
   late DateTime _clockDate;
   late DateTime _selectedDate;
-  //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
 
   final List<AttendData> _dataList = [];
   late bool _isLoading;
@@ -91,10 +89,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
     switch (data.type) {
       case AttendType.clockIn:
-        color = const Color.fromARGB(255, 210, 255, 212);
+        color = Constants.green;
         break;
       case AttendType.clockOut:
-        color = const Color.fromARGB(255, 255, 213, 227);
+        color = Constants.red;
         break;
 
       default:
@@ -102,8 +100,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     DataRow dataRow = DataRow(
-        //selected: type == AttendType.clockIn.toStr,
-        //onSelectChanged: (value) => {},
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
           DataCell(Text(name, style: style)),
