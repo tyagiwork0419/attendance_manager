@@ -50,40 +50,45 @@ class _CommandButtonsState extends State<CommandButtons> {
         color: Colors.white,
         fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
 
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      if (widget.clockIn)
-        Expanded(
-            child: SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                    onPressed: _manualClockIn,
-                    child: Text('出勤', style: buttonTextStyle)))),
-      const SizedBox(width: 10),
-      if (widget.clockOut)
-        Expanded(
-            child: SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                    onPressed: _manualClockOut,
-                    child: Text('退勤', style: buttonTextStyle)))),
-      const SizedBox(width: 10),
-      if (widget.timecard)
-        Expanded(
-            child: SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => TimecardPage(
-                                  service: _attendanceService,
-                                  //title: widget.title,
-                                  name: widget.name,
-                                  dateTime: widget.dateTime)));
-                    },
-                    child: Text('タイムカード', style: buttonTextStyle)))),
-    ]);
+    double buttonHeight = 50;
+    double spaceMulti = 0.025;
+    double buttonWidthMulti = 0.3;
+
+    return LayoutBuilder(
+        builder: (context, constraints) => Wrap(
+                runAlignment: WrapAlignment.center,
+                spacing: constraints.maxWidth * spaceMulti,
+                children: [
+                  if (widget.clockIn)
+                    SizedBox(
+                        width: constraints.maxWidth * buttonWidthMulti,
+                        height: buttonHeight,
+                        child: ElevatedButton(
+                            onPressed: _manualClockIn,
+                            child: Text('出勤', style: buttonTextStyle))),
+                  if (widget.clockOut)
+                    SizedBox(
+                        width: constraints.maxWidth * buttonWidthMulti,
+                        height: buttonHeight,
+                        child: ElevatedButton(
+                            onPressed: _manualClockOut,
+                            child: Text('退勤', style: buttonTextStyle))),
+                  if (widget.timecard)
+                    SizedBox(
+                        width: constraints.maxWidth * buttonWidthMulti,
+                        height: buttonHeight,
+                        child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => TimecardPage(
+                                          service: _attendanceService,
+                                          name: widget.name,
+                                          dateTime: widget.dateTime)));
+                            },
+                            child: Text('タイムカード', style: buttonTextStyle))),
+                ]));
   }
 
   Future<void> _manualClockIn() async {
