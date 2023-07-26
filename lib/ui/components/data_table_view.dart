@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../application/constants.dart';
+
 class DataTableView extends StatefulWidget {
   final ScrollController? scrollController;
   final List<DataColumn> columns;
@@ -21,6 +23,7 @@ class DataTableView extends StatefulWidget {
 }
 
 class _DataTableViewState extends State<DataTableView> {
+  final ScrollController scrollControllerX = ScrollController();
   Widget _loading() {
     return const Stack(fit: StackFit.expand, children: [
       ColoredBox(
@@ -36,24 +39,34 @@ class _DataTableViewState extends State<DataTableView> {
       Container(
           decoration: BoxDecoration(border: Border.all()),
           child: LayoutBuilder(
-              builder: ((context, constraints) => ListView(children: [
-                    SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        controller: widget.scrollController,
-                        child: SizedBox(
-                            width: constraints.maxWidth,
-                            child: DataTable(
-                                headingRowHeight: 60,
-                                dataRowMaxHeight: 60,
-                                dataRowMinHeight: 60,
-                                showCheckboxColumn: true,
-                                border: TableBorder.all(),
-                                headingRowColor: MaterialStateColor.resolveWith(
-                                    (states) => const Color.fromARGB(
-                                        255, 218, 218, 218)),
-                                columns: widget.columns,
-                                rows: widget.rows!)))
-                  ])))),
+              builder: ((context, constraints) => //ListView(children: [
+                  Scrollbar(
+                      thumbVisibility: true,
+                      scrollbarOrientation: ScrollbarOrientation.bottom,
+                      controller: scrollControllerX,
+                      child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: scrollControllerX,
+                          child: Scrollbar(
+                              thumbVisibility: true,
+                              controller: widget.scrollController,
+                              child: SingleChildScrollView(
+                                  scrollDirection: Axis.vertical,
+                                  controller: widget.scrollController,
+                                  child: Container(
+                                      //width: constraints.maxWidth,
+                                      constraints: BoxConstraints(
+                                          minWidth: constraints.maxWidth),
+                                      child: DataTable(
+                                          headingRowHeight: 60,
+                                          dataRowMaxHeight: 60,
+                                          dataRowMinHeight: 60,
+                                          border: TableBorder.all(),
+                                          headingRowColor:
+                                              MaterialStateColor.resolveWith(
+                                                  (states) => Constants.gray),
+                                          columns: widget.columns,
+                                          rows: widget.rows!))))))))),
       if (widget.isLoading!) _loading(),
     ]);
   }

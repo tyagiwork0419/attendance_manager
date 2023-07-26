@@ -95,7 +95,7 @@ class TimecardData {
         case CreateState.setClockOut:
           switch (attendData.type) {
             case AttendType.clockIn:
-              print('error: 退勤データが足りません');
+              //error('error: 退勤データが足りません');
               dataList.add(data!.copyWith());
               state = CreateState.setClockIn;
               break;

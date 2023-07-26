@@ -37,7 +37,8 @@ class _TimecardPageState extends State<TimecardPage> {
   final List<TimecardData> _timecardDataList = [];
 
   final List<DataRow> _dataRowList = [];
-  final DateFormat _yearMonthFormat = DateFormat('yyyy/MM');
+  final DateFormat _yearMonthFormat = DateFormat('yyyy年MM月');
+  final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
 
   late DateTime _selectedDate;
 
@@ -79,7 +80,7 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   DataRow _createDataRowByAttendData(DateTime dateTime, TimecardData data) {
-    String date = DateFormat('MM/dd(E)', 'ja').format(dateTime);
+    String date = _monthDayFormat.format(dateTime);
     String clockInTime = data.clockInTime == null
         ? ''
         : DateFormat.Hm().format(data.clockInTime!);
@@ -88,19 +89,16 @@ class _TimecardPageState extends State<TimecardPage> {
         : DateFormat.Hm().format(data.clockOutTime!);
     String elapsedTime = data.elapsedTime;
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
-    //Color color = const Color.fromARGB(255, 210, 255, 212);
     Color color;
 
     switch (dateTime.weekday) {
       case DateTime.saturday:
-        color = const Color.fromARGB(255, 255, 213, 227);
-        break;
       case DateTime.sunday:
-        color = const Color.fromARGB(255, 255, 213, 227);
+        color = Constants.red;
         break;
 
       default:
-        color = const Color.fromARGB(255, 210, 255, 212);
+        color = Constants.green;
     }
 
     DataRow dataRow = DataRow(
@@ -110,24 +108,6 @@ class _TimecardPageState extends State<TimecardPage> {
           DataCell(Text(clockInTime, style: style)),
           DataCell(Text(clockOutTime, style: style)),
           DataCell(Text(elapsedTime, style: style)),
-          /*
-          DataCell(IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () async {
-              debugPrint('presseed');
-              bool? delete = await showDialog<bool>(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) {
-                    return const DeleteDialog();
-                  });
-
-              if (delete!) {
-                _deleteRow(data);
-              }
-            },
-          )),
-          */
         ]);
 
     return dataRow;
@@ -161,12 +141,6 @@ class _TimecardPageState extends State<TimecardPage> {
     Map<int, MonthlyTimecard> monthlyTimecardMap = MonthlyTimecard.create(
         _name, _selectedDate.year, _selectedDate.month, _dataList);
 
-/*
-    _timecardDataList = TimecardData.create(_dataList);
-    for (int i = 0; i < _timecardDataList.length; ++i) {
-      _dataRowList.add(_createDataRowByAttendData(_timecardDataList[i]));
-    }
-    */
     monthlyTimecardMap[_selectedDate.month]!
         .dataMap
         .forEach((day, dailyTimecard) {
@@ -234,24 +208,6 @@ class _TimecardPageState extends State<TimecardPage> {
     ));
   }
 
-  void _onPickDate() {
-    _isLoading = true;
-  }
-
-  Future<void> _onGetResults(List<AttendData> results) async {
-    _dataList.clear();
-    _dataList.addAll(results);
-    _isLoading = false;
-
-    setState(() {
-      _updateDataRow();
-    });
-  }
-
-  void _onError(Object error) {
-    _isLoading = false;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,12 +232,6 @@ class _TimecardPageState extends State<TimecardPage> {
                             rows: _dataRowList,
                             isLoading: _isLoading),
                       )),
-                  /*
-                  CommandButtons(_service, _name, _selectedDate,
-                      timecard: false,
-                      onPickDate: _onPickDate,
-                      onGetResults: _onGetResults,
-                      onError: _onError)*/
                 ])))));
   }
 }
