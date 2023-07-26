@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class Constants {
-  static const String version = '0.0.16';
+  const Constants();
+
+  static const String version = '0.0.17';
 
   static const String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbwKrqcM5RrryEZbRI1zuF3g4DJnyrncgwp0oBXPatUSoZZcM7p1ztCVKgWO3iG1E6A_:run';
@@ -17,9 +19,24 @@ class Constants {
   //'https://www.googleapis.com/auth/spreadsheets';
   //'https://www.googleapis.com/auth/drive';
 
+  static final List<String> nameList = <String>[
+    //'test',
+    '八木',
+    '大滝',
+    '山本',
+    '広瀬',
+    '坂下',
+    '西本'
+  ];
+
   //static const String
   static const double paddingMiddium = 10;
   static const String locale = 'ja';
+
+  static const EdgeInsets topBottomPadding = EdgeInsets.fromLTRB(
+      0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
+  static const EdgeInsets allPadding = EdgeInsets.all(Constants.paddingMiddium);
+  static const Duration wait100Milliseconds = Duration(milliseconds: 100);
 
   static TextStyle getVersionTextStyle(BuildContext context) {
     return TextStyle(

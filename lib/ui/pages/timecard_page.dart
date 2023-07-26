@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 
-import '../application/constants.dart';
-import '../models/attend_data.dart';
-import '../models/daily_timecard.dart';
-import '../models/timecard_data.dart';
-import '../services/attendance_service.dart';
-import 'components/data_table_view.dart';
-import 'components/dialogs/error_dialog.dart';
-import 'components/my_app_bar.dart';
+import '../../application/constants.dart';
+import '../../models/attend_data.dart';
+import '../../models/timecard_data.dart';
+import '../../services/attendance_service.dart';
+import '../components/data_table_view.dart';
+import '../components/dialogs/error_dialog.dart';
+import '../components/my_app_bar.dart';
 
 class TimecardPage extends StatefulWidget {
   final AttendanceService service;
@@ -21,9 +20,10 @@ class TimecardPage extends StatefulWidget {
   const TimecardPage(
       {super.key,
       required this.service,
-      required this.title,
+      //required this.title,
       required this.name,
-      required this.dateTime});
+      required this.dateTime})
+      : title = 'タイムカード ( $name )';
 
   @override
   State<TimecardPage> createState() => _TimecardPageState();
@@ -34,13 +34,7 @@ class _TimecardPageState extends State<TimecardPage> {
   late String _name;
   late AttendanceService _service;
   final List<AttendData> _dataList = [];
-  List<TimecardData> _timecardDataList = [];
-
-  final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(
-      0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
-  final EdgeInsets allPadding = const EdgeInsets.all(Constants.paddingMiddium);
-
-  final Duration wait100Milliseconds = const Duration(milliseconds: 100);
+  final List<TimecardData> _timecardDataList = [];
 
   final List<DataRow> _dataRowList = [];
   final DateFormat _yearMonthFormat = DateFormat('yyyy/MM');
@@ -72,7 +66,7 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   List<DataColumn> _createDataColumnList() {
-    final List<String> dataColumnLabels = ['日付', '名前', '出勤', '退勤', '時間'];
+    final List<String> dataColumnLabels = ['日付', '出勤', '退勤', '時間'];
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<DataColumn> columns = [];
@@ -84,39 +78,8 @@ class _TimecardPageState extends State<TimecardPage> {
     return columns;
   }
 
-/*
-  DataRow _createDataRowByDailyTimecard(DailyTimecard data) {
-    String date = DateFormat('MM/dd(E)', 'ja').format(data.date);
-    String name = data.name;
-    String clockInTime = data.clockInTime == null
-        ? ''
-        : DateFormat.Hm().format(data.clockInTime!);
-    String clockOutTime = data.clockOutTime == null
-        ? ''
-        : DateFormat.Hm().format(data.clockOutTime!);
-    String elapsedTime = data.elapsedTime;
-    Color color = const Color.fromARGB(255, 210, 255, 212);
-    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
-
-
-    DataRow dataRow = DataRow(
-        color: MaterialStateColor.resolveWith((states) => color),
-        cells: [
-          DataCell(Text(date, style: style)),
-          DataCell(Text(name, style: style)),
-          DataCell(Text(clockInTime, style: style)),
-          DataCell(Text(clockOutTime, style: style)),
-          DataCell(Text(elapsedTime, style: style)),
-       ]);
-
-    return dataRow;
-  }
-  */
-
   DataRow _createDataRowByAttendData(DateTime dateTime, TimecardData data) {
-    //String date = DateFormat('MM/dd(E)', 'ja').format(data.date!);
     String date = DateFormat('MM/dd(E)', 'ja').format(dateTime);
-    String name = data.name;
     String clockInTime = data.clockInTime == null
         ? ''
         : DateFormat.Hm().format(data.clockInTime!);
@@ -144,7 +107,6 @@ class _TimecardPageState extends State<TimecardPage> {
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
           DataCell(Text(date, style: style)),
-          DataCell(Text(name, style: style)),
           DataCell(Text(clockInTime, style: style)),
           DataCell(Text(clockOutTime, style: style)),
           DataCell(Text(elapsedTime, style: style)),
@@ -272,25 +234,22 @@ class _TimecardPageState extends State<TimecardPage> {
     ));
   }
 
-  Widget _buttons() {
-    TextStyle? buttonTextStyle = TextStyle(
-        color: Colors.white,
-        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+  void _onPickDate() {
+    _isLoading = true;
+  }
 
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Expanded(
-          child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                  onPressed: () {},
-                  child: Text('出勤', style: buttonTextStyle)))),
-      const SizedBox(width: 10),
-      Expanded(
-          child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                  onPressed: () {}, child: Text('退勤', style: buttonTextStyle))))
-    ]);
+  Future<void> _onGetResults(List<AttendData> results) async {
+    _dataList.clear();
+    _dataList.addAll(results);
+    _isLoading = false;
+
+    setState(() {
+      _updateDataRow();
+    });
+  }
+
+  void _onError(Object error) {
+    _isLoading = false;
   }
 
   @override
@@ -300,7 +259,7 @@ class _TimecardPageState extends State<TimecardPage> {
             .appBar(context),
         body: SingleChildScrollView(
             child: Padding(
-                padding: allPadding,
+                padding: Constants.allPadding,
                 child: Center(
                     child: Column(children: [
                   SizedBox(
@@ -308,14 +267,21 @@ class _TimecardPageState extends State<TimecardPage> {
                       height: MediaQuery.of(context).size.height * 0.05,
                       child: _monthButton()),
                   SizedBox(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.8,
-                    child: DataTableView(
-                        columns: _createDataColumnList(),
-                        rows: _dataRowList,
-                        isLoading: _isLoading),
-                  ),
-                  //_buttons(),
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height * 0.8,
+                      child: Padding(
+                        padding: Constants.topBottomPadding,
+                        child: DataTableView(
+                            columns: _createDataColumnList(),
+                            rows: _dataRowList,
+                            isLoading: _isLoading),
+                      )),
+                  /*
+                  CommandButtons(_service, _name, _selectedDate,
+                      timecard: false,
+                      onPickDate: _onPickDate,
+                      onGetResults: _onGetResults,
+                      onError: _onError)*/
                 ])))));
   }
 }
