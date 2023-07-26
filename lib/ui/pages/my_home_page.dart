@@ -45,13 +45,11 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    //_dropdownValue = _nameList.first;
     _gasClient = GasClient(Constants.clientId, Constants.clientSecret,
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
 
     DateTime now = DateTime.now();
-    //_clockString = AttendData.dateTimeFormat.format(now);
     _clockDate = now;
     _selectedDate = now;
     _isLoading = false;
@@ -60,7 +58,6 @@ class _MyHomePageState extends State<MyHomePage> {
       DateTime now = DateTime.now();
       _clockDate = now;
 
-      //_clockString = AttendData.dateTimeFormat.format(now);
       setState(() {});
     });
 
@@ -208,15 +205,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _clock(DateTime clock) {
+    final DateFormat dateFormat =
+        DateFormat('yyyy年MM月dd日(E) HH時mm分', Constants.locale);
     TextStyle? clockTextStyle = Theme.of(context).textTheme.headlineSmall;
-    String clockString = AttendData.dateTimeFormat.format(clock);
+    String clockString = dateFormat.format(clock);
     return Center(
       child: Text(clockString, style: clockTextStyle),
     );
   }
 
   Widget _dateButton(DateTime date, VoidCallback onPressed) {
-    final DateFormat dateFormat = DateFormat('yyyy/MM/dd');
+    final DateFormat dateFormat = DateFormat('yyyy年MM月dd日');
     return Center(
         child: ElevatedButton(
       //child: Text(_dateFormat.format(_selectedDate)),
