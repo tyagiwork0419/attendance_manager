@@ -1,20 +1,18 @@
 import 'dart:async';
 
-import 'package:attendance_manager/ui/timecard_page.dart';
+import 'package:attendance_manager/ui/components/command_buttons.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
-import '../models/attend_data.dart';
-import '../services/gas_client.dart';
-import '../services/attendance_service.dart';
-import '../application/constants.dart';
+import '../../models/attend_data.dart';
+import '../../services/gas_client.dart';
+import '../../services/attendance_service.dart';
+import '../../application/constants.dart';
 
-import 'components/data_table_view.dart';
-import 'components/dialogs/datetime_picker_dialog.dart';
-import 'components/dialogs/delete_dialog.dart';
-import 'components/dialogs/error_dialog.dart';
-import 'components/my_app_bar.dart';
+import '../components/data_table_view.dart';
+import '../components/dialogs/delete_dialog.dart';
+import '../components/dialogs/error_dialog.dart';
+import '../components/my_app_bar.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -31,22 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
-  final List<String> _nameList = <String>[
-    //'test',
-    '八木',
-    '大滝',
-    '山本',
-    '広瀬',
-    '坂下',
-    '西本'
-  ];
-
-  final EdgeInsets topBottomPadding = const EdgeInsets.fromLTRB(
-      0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
-  final EdgeInsets allPadding = const EdgeInsets.all(Constants.paddingMiddium);
-
   final ScrollController _scrollController = ScrollController();
-  final Duration wait100Milliseconds = const Duration(milliseconds: 100);
 
   //String _clockString = '';
   late DateTime _clockDate;
@@ -58,7 +41,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int _choiceIndex = 0;
   String get _chooseName {
-    return _nameList[_choiceIndex];
+    return Constants.nameList[_choiceIndex];
   }
 
   @override
@@ -69,15 +52,13 @@ class _MyHomePageState extends State<MyHomePage> {
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
     _attendanceService = AttendanceService(_gasClient);
 
-    initializeDateFormatting(Constants.locale);
-
     DateTime now = DateTime.now();
     //_clockString = AttendData.dateTimeFormat.format(now);
     _clockDate = now;
     _selectedDate = now;
     _isLoading = false;
 
-    Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
+    Timer.periodic(Constants.wait100Milliseconds, (Timer timer) {
       DateTime now = DateTime.now();
       _clockDate = now;
 
@@ -88,21 +69,20 @@ class _MyHomePageState extends State<MyHomePage> {
     _getByDateTime(now);
   }
 
-  List<DataColumn> _createDataColumnList() {
+  List<DataColumn> _createDataColumns() {
     List<String> dataColumnLabels = ['名前', '時刻', '種類', '削除'];
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<DataColumn> columns = [];
     for (int i = 0; i < dataColumnLabels.length; ++i) {
       String label = dataColumnLabels[i];
-      columns
-          .add(DataColumn(label: Expanded(child: Text(label, style: style))));
+      columns.add(DataColumn(label: Text(label, style: style)));
     }
 
     return columns;
   }
 
-  DataRow _createDataRowByAttendData(AttendData data) {
+  DataRow _createDataRowsByAttendData(AttendData data) {
     String name = data.name;
     String dateTime = data.shortDateTimeStr;
     String type = data.type.toStr;
@@ -122,6 +102,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     DataRow dataRow = DataRow(
+        //selected: type == AttendType.clockIn.toStr,
+        //onSelectChanged: (value) => {},
         color: MaterialStateColor.resolveWith((states) => color),
         cells: [
           DataCell(Text(name, style: style)),
@@ -151,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _updateDataRow() {
     _dataRowList.clear();
     for (int i = 0; i < _dataList.length; ++i) {
-      _dataRowList.add(_createDataRowByAttendData(_dataList[i]));
+      _dataRowList.add(_createDataRowsByAttendData(_dataList[i]));
     }
   }
 
@@ -174,21 +156,14 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _updateDataRow();
       });
-      await Future.delayed(wait100Milliseconds);
+      await Future.delayed(Constants.wait100Milliseconds);
       setState(() {
         _scrollToEnd();
       });
     } catch (e) {
       _isLoading = false;
-      _showErrorDialog(e.toString());
+      ErrorDialog.showErrorDialog(context, e);
     }
-  }
-
-  void _showErrorDialog(String error) {
-    debugPrint(error);
-    showDialog<void>(
-        context: context,
-        builder: (_) => ErrorDialog(title: '通信エラー', content: error));
   }
 
   Future<void> _deleteRow(AttendData data) async {
@@ -212,55 +187,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     } catch (e) {
       _isLoading = false;
-      _showErrorDialog(e.toString());
-    }
-  }
-
-  Future<void> _manualClockIn() async {
-    await _manualInput(AttendType.clockIn);
-  }
-
-  Future<void> _manualClockOut() async {
-    await _manualInput(AttendType.clockOut);
-  }
-
-  Future<void> _manualInput(AttendType type) async {
-    DateTime? dateTime = await showDialog<DateTime?>(
-        context: context,
-        builder: (_) {
-          return DateTimePickerDialog(
-              dateTime: _selectedDate,
-              //nameList: _nameList,
-              selectedName: _chooseName,
-              selectedType: type);
-        });
-
-    if (dateTime == null) {
-      return;
-    }
-    try {
-      _isLoading = true;
-      String sheetId = _attendanceService.getSheetId(dateTime);
-      String sheetName = _attendanceService.getSheetName(dateTime);
-      String name = _chooseName;
-      AttendData data = AttendData(name, type, dateTime);
-
-      List<AttendData> result =
-          await _attendanceService.setClock(sheetId, sheetName, data);
-      _dataList.clear();
-      _dataList.addAll(result);
-      _isLoading = false;
-
-      setState(() {
-        _updateDataRow();
-      });
-      await Future.delayed(wait100Milliseconds);
-      setState(() {
-        _scrollToEnd();
-      });
-    } catch (e) {
-      _isLoading = false;
-      _showErrorDialog(e.toString());
+      ErrorDialog.showErrorDialog(context, e);
     }
   }
 
@@ -304,42 +231,26 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
   }
 
-  Widget _buttons() {
-    TextStyle? buttonTextStyle = TextStyle(
-        color: Colors.white,
-        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+  void _onPickDate() {
+    _isLoading = true;
+  }
 
-    return Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Expanded(
-          child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                  onPressed: _manualClockIn,
-                  child: Text('出勤', style: buttonTextStyle)))),
-      const SizedBox(width: 10),
-      Expanded(
-          child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                  onPressed: _manualClockOut,
-                  child: Text('退勤', style: buttonTextStyle)))),
-      const SizedBox(width: 10),
-      Expanded(
-          child: SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => TimecardPage(
-                                service: _attendanceService,
-                                title: widget.title,
-                                name: _chooseName,
-                                dateTime: _selectedDate)));
-                  },
-                  child: Text('タイムカード', style: buttonTextStyle)))),
-    ]);
+  Future<void> _onGetResults(List<AttendData> results) async {
+    _dataList.clear();
+    _dataList.addAll(results);
+    _isLoading = false;
+
+    setState(() {
+      _updateDataRow();
+    });
+    await Future.delayed(Constants.wait100Milliseconds);
+    setState(() {
+      _scrollToEnd();
+    });
+  }
+
+  void _onError(Object error) {
+    _isLoading = false;
   }
 
   Widget _nameButtons() {
@@ -349,9 +260,9 @@ class _MyHomePageState extends State<MyHomePage> {
           spacing: 10,
           children:
               // _choiceChipList)]),
-              List<ChoiceChip>.generate(_nameList.length, (int index) {
+              List<ChoiceChip>.generate(Constants.nameList.length, (int index) {
             return ChoiceChip(
-              label: Text(_nameList[index], style: choiceTextStyle),
+              label: Text(Constants.nameList[index], style: choiceTextStyle),
               selectedColor: Colors.yellow,
               selected: _choiceIndex == index,
               onSelected: (selected) {
@@ -369,7 +280,7 @@ class _MyHomePageState extends State<MyHomePage> {
             .appBar(context),
         body: SingleChildScrollView(
             child: Padding(
-          padding: allPadding,
+          padding: Constants.allPadding,
           child: Center(
               child: Column(children: [
             SizedBox(
@@ -381,17 +292,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 height: MediaQuery.of(context).size.height * 0.05,
                 child: _dateButton(_selectedDate, _selectDate)),
             Padding(
-                padding: topBottomPadding,
+                padding: Constants.topBottomPadding,
                 child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.5,
                     child: DataTableView(
                         scrollController: _scrollController,
-                        columns: _createDataColumnList(),
+                        columns: _createDataColumns(),
                         rows: _dataRowList,
                         isLoading: _isLoading))),
-            _buttons(),
-            Padding(padding: allPadding, child: _nameButtons())
+            //_buttons(),
+            CommandButtons(_attendanceService, _chooseName, _selectedDate,
+                onPickDate: _onPickDate,
+                onGetResults: _onGetResults,
+                onError: _onError),
+            Padding(padding: Constants.allPadding, child: _nameButtons())
           ])),
         )));
   }

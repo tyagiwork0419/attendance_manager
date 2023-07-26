@@ -7,6 +7,13 @@ class ErrorDialog extends StatelessWidget {
   const ErrorDialog({super.key, String? title, this.content})
       : title = title ?? 'エラー';
 
+  static void showErrorDialog(BuildContext context, Object error) {
+    debugPrint(error.toString());
+    showDialog<void>(
+        context: context,
+        builder: (_) => ErrorDialog(title: '通信エラー', content: error.toString()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

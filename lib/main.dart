@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 //import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'ui/my_home_page.dart';
+import 'ui/pages/my_home_page.dart';
 
 void main() {
   initializeDateFormatting('ja');

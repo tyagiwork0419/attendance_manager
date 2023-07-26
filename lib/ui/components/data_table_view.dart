@@ -35,20 +35,25 @@ class _DataTableViewState extends State<DataTableView> {
     return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
       Container(
           decoration: BoxDecoration(border: Border.all()),
-          child: ListView(children: [
-            SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                controller: widget.scrollController,
-                child: DataTable(
-                    headingRowHeight: 60,
-                    dataRowMaxHeight: 60,
-                    dataRowMinHeight: 60,
-                    border: TableBorder.all(),
-                    headingRowColor: MaterialStateColor.resolveWith(
-                        (states) => const Color.fromARGB(255, 218, 218, 218)),
-                    columns: widget.columns,
-                    rows: widget.rows!))
-          ])),
+          child: LayoutBuilder(
+              builder: ((context, constraints) => ListView(children: [
+                    SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        controller: widget.scrollController,
+                        child: SizedBox(
+                            width: constraints.maxWidth,
+                            child: DataTable(
+                                headingRowHeight: 60,
+                                dataRowMaxHeight: 60,
+                                dataRowMinHeight: 60,
+                                showCheckboxColumn: true,
+                                border: TableBorder.all(),
+                                headingRowColor: MaterialStateColor.resolveWith(
+                                    (states) => const Color.fromARGB(
+                                        255, 218, 218, 218)),
+                                columns: widget.columns,
+                                rows: widget.rows!)))
+                  ])))),
       if (widget.isLoading!) _loading(),
     ]);
   }

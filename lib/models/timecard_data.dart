@@ -31,10 +31,20 @@ class TimecardData {
     }
 
     double elapsed = (clockOutTime!.difference(clockInTime!).inMinutes / 60);
-    if (elapsed >= 8) {
+    if (_includingLunchTime()) {
       elapsed -= 1;
     }
     return elapsed.toStringAsFixed(1);
+  }
+
+  bool _includingLunchTime() {
+    bool isWeekday = (clockInTime!.weekday != DateTime.saturday ||
+        clockInTime!.weekday != DateTime.sunday);
+
+    bool includinglunchTime =
+        (clockInTime!.hour <= 11 && clockOutTime!.hour >= 14);
+
+    return isWeekday && includinglunchTime;
   }
 
   static List<TimecardData> create(List<AttendData> attendDataList) {
