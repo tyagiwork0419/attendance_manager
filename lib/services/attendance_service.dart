@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 
+import '../models/monthly_timecard.dart';
 import 'gas_client.dart';
 import '../models/attend_data.dart';
 
@@ -96,4 +97,6 @@ class AttendanceService {
     var result = _parseFromJson(jsonResult);
     return result;
   }
+
+  Future<void> exportMonthlyTimecardToCsv(MonthlyTimecard timecard) async {}
 }
