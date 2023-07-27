@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:html';
+
 import 'package:attendance_manager/models/monthly_timecard.dart';
+import 'package:csv/csv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
@@ -34,11 +39,12 @@ class _TimecardPageState extends State<TimecardPage> {
   late String _name;
   late AttendanceService _service;
   final List<AttendData> _dataList = [];
-  final List<TimecardData> _timecardDataList = [];
+
+  late MonthlyTimecard? _monthlyTimecard;
+  //final List<TimecardData> _timecardDataList = [];
 
   final List<DataRow> _dataRowList = [];
   final DateFormat _yearMonthFormat = DateFormat('yyyy年MM月');
-  final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
 
   late DateTime _selectedDate;
 
@@ -59,15 +65,8 @@ class _TimecardPageState extends State<TimecardPage> {
     _getByName(_name, now);
   }
 
-  void _showErrorDialog(String error) {
-    debugPrint(error);
-    showDialog<void>(
-        context: context,
-        builder: (_) => ErrorDialog(title: '通信エラー', content: error));
-  }
-
   List<DataColumn> _createDataColumnList() {
-    final List<String> dataColumnLabels = ['日付', '出勤', '退勤', '時間'];
+    final List<String> dataColumnLabels = TimecardData.getElementName();
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<DataColumn> columns = [];
@@ -80,13 +79,9 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   DataRow _createDataRowByAttendData(DateTime dateTime, TimecardData data) {
-    String date = _monthDayFormat.format(dateTime);
-    String clockInTime = data.clockInTime == null
-        ? ''
-        : DateFormat.Hm().format(data.clockInTime!);
-    String clockOutTime = data.clockOutTime == null
-        ? ''
-        : DateFormat.Hm().format(data.clockOutTime!);
+    String date = data.monthDayStr;
+    String clockInTime = data.clockInTimeStr;
+    String clockOutTime = data.clockOutTimeStr;
     String elapsedTime = data.elapsedTime;
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
     Color color;
@@ -124,57 +119,32 @@ class _TimecardPageState extends State<TimecardPage> {
 
       _dataList.clear();
       _dataList.addAll(result);
+
       _isLoading = false;
       setState(() {
         _updateDataRow();
       });
     } catch (e) {
       _isLoading = false;
-      _showErrorDialog(e.toString());
+      ErrorDialog.showErrorDialog(context, e);
     }
   }
 
   void _updateDataRow() {
     _dataRowList.clear();
-    _timecardDataList.clear();
+    //_timecardDataList.clear();
 
     Map<int, MonthlyTimecard> monthlyTimecardMap = MonthlyTimecard.create(
         _name, _selectedDate.year, _selectedDate.month, _dataList);
+    _monthlyTimecard = monthlyTimecardMap[_selectedDate.month];
 
-    monthlyTimecardMap[_selectedDate.month]!
-        .dataMap
-        .forEach((day, dailyTimecard) {
+    _monthlyTimecard!.dataMap.forEach((day, dailyTimecard) {
       List<TimecardData> dataList = dailyTimecard.dataList;
       for (int i = 0; i < dataList.length; ++i) {
         TimecardData data = dailyTimecard.dataList[i];
         _dataRowList.add(_createDataRowByAttendData(data.date!, data));
       }
-
-      if (dataList.isEmpty) {
-        _dataRowList.add(_createDataRowByAttendData(
-            dailyTimecard.date, TimecardData(dailyTimecard.name)));
-      }
     });
-  }
-
-  Future<void> _getByDateTime(DateTime dateTime) async {
-    String sheetId = _service.getSheetId(dateTime);
-    String sheetName = _service.getSheetName(dateTime);
-
-    try {
-      _isLoading = true;
-      List<AttendData> result =
-          await _service.getByDateTime(sheetId, sheetName, dateTime);
-      _dataList.clear();
-      _dataList.addAll(result);
-      _isLoading = false;
-      setState(() {
-        _updateDataRow();
-      });
-    } catch (e) {
-      _isLoading = false;
-      _showErrorDialog(e.toString());
-    }
   }
 
   Future<void> _selectMonth() async {
@@ -208,11 +178,82 @@ class _TimecardPageState extends State<TimecardPage> {
     ));
   }
 
+  Future<void> _exportData() async {
+    String name = _monthlyTimecard!.name;
+    String date = DateFormat('yyyy_MM').format(_monthlyTimecard!.date);
+    String fileName = '${name}_${date}.csv';
+
+    //final csv = const ListToCsvConverter(fieldDelimiter: ';')
+    final header = TimecardData.getElementName();
+    final rows = _monthlyTimecard!.toCsvFormat();
+
+    if (kIsWeb == true) {
+      //AnchorElement(href: 'data:text/plain;charset=utf-8,$csv')
+      //csvDownload(fileName: fileName, csv: csv, utf8BOM: true);
+      csvDownload(
+          fileName: fileName, header: header, rows: rows, utf8BOM: true);
+    }
+  }
+
+  void csvDownload(
+      {required String fileName,
+      required List<String> header,
+      required List<List<String>> rows,
+      bool utf8BOM = false}) {
+    AnchorElement anchorElement;
+    if (utf8BOM) {
+      //　Excelで開く用に日本語を含む場合はUTF-8 BOMにする措置
+      // ref. https://github.com/close2/csv/issues/41#issuecomment-899038353
+      //final csv = const ListToCsvConverter(fieldDelimiter: ';').convert(
+      final csv = const ListToCsvConverter().convert(
+        [header, ...rows],
+      );
+      final bomUtf8Csv = [0xEF, 0xBB, 0xBF, ...utf8.encode(csv)];
+      final base64CsvBytes = base64Encode(bomUtf8Csv);
+      anchorElement = AnchorElement(
+        href: 'data:text/plain;charset=utf-8;base64,$base64CsvBytes',
+      );
+    } else {
+      final csv = const ListToCsvConverter().convert(
+        [header, ...rows],
+      );
+      anchorElement = AnchorElement(
+        href: 'data:text/plain;charset=utf-8,$csv',
+      );
+    }
+    anchorElement
+      ..setAttribute('download', fileName)
+      ..click();
+  }
+
+  Widget _commnadButtons() {
+    TextStyle? buttonTextStyle = TextStyle(
+        color: Colors.white,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+
+    double buttonHeight = 50;
+    //double spaceMulti = 0.025;
+    double buttonWidthMulti = 0.3;
+
+    return LayoutBuilder(
+        builder: (context, constraints) => Wrap(
+                runAlignment: WrapAlignment.center,
+                //spacing: constraints.maxWidth * spaceMulti,
+                children: [
+                  //if (widget.clockIn)
+                  SizedBox(
+                      width: constraints.maxWidth * buttonWidthMulti,
+                      height: buttonHeight,
+                      child: ElevatedButton(
+                          onPressed: _exportData,
+                          child: Text('CSV出力', style: buttonTextStyle)))
+                ]));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: MyAppBar(title: widget.title, version: Constants.version)
-            .appBar(context),
+        appBar: MyAppBar(title: widget.title).appBar(context),
         body: SingleChildScrollView(
             child: Padding(
                 padding: Constants.allPadding,
@@ -224,7 +265,7 @@ class _TimecardPageState extends State<TimecardPage> {
                       child: _monthButton()),
                   SizedBox(
                       width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.8,
+                      height: MediaQuery.of(context).size.height * 0.7,
                       child: Padding(
                         padding: Constants.topBottomPadding,
                         child: DataTableView(
@@ -232,6 +273,7 @@ class _TimecardPageState extends State<TimecardPage> {
                             rows: _dataRowList,
                             isLoading: _isLoading),
                       )),
+                  _commnadButtons(),
                 ])))));
   }
 }

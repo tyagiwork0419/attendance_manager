@@ -1,4 +1,6 @@
 //import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
+
 import 'attend_data.dart';
 import 'datetime_utility.dart';
 
@@ -9,15 +11,47 @@ class TimecardData {
   late DateTime? clockInTime;
   late DateTime? clockOutTime;
 
-  TimecardData(this.name, {this.clockInTime, this.clockOutTime}) {
+  final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
+
+  TimecardData(this.name, {this.date, this.clockInTime, this.clockOutTime}) {
+    if (date != null) {
+      return;
+    }
+
     if (clockInTime != null) {
       date = DateTime(clockInTime!.year, clockInTime!.month, clockInTime!.day);
     } else if (clockOutTime != null) {
       date =
           DateTime(clockOutTime!.year, clockOutTime!.month, clockOutTime!.day);
-    } else {
-      date = null;
     }
+  }
+
+  String get monthDayStr {
+    String dateStr = _monthDayFormat.format(date!);
+    return dateStr;
+  }
+
+  String get clockInTimeStr {
+    return clockInTime != null ? DateFormat.Hm().format(clockInTime!) : '';
+  }
+
+  String get clockOutTimeStr {
+    return clockOutTime != null ? DateFormat.Hm().format(clockOutTime!) : '';
+  }
+
+  static List<String> getElementName() {
+    return ['日付', '出勤', '退勤', '時間'];
+  }
+
+  List<String> toCsvFormat() {
+    List<String> csv = [
+      monthDayStr,
+      clockInTimeStr,
+      clockOutTimeStr,
+      elapsedTime,
+    ];
+
+    return csv;
   }
 
   TimecardData copyWith() {
