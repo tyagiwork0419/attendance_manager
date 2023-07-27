@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.20';
+  static const String version = '0.0.22';
 
   static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbwKrqcM5RrryEZbRI1zuF3g4DJnyrncgwp0oBXPatUSoZZcM7p1ztCVKgWO3iG1E6A_:run';
+      'https://script.googleapis.com/v1/scripts/AKfycbw_XU82LUQ7FMhf6JHL8QRnG8FHAgPktqfn3Th9uNmq5dxhBBk44bOMNuxWJDIngJvE:run';
 
   static const String tokenUrl = 'https://oauth2.googleapis.com/token';
 
