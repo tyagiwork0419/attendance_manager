@@ -59,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
       DateTime now = DateTime.now();
       _clockDate = now;
 
-      //setState(() {});
+      setState(() {});
     });
 
     _getByDateTime(now);
@@ -76,7 +76,6 @@ class _MyHomePageState extends State<MyHomePage> {
     List<ExpandableTableHeader> headers = [];
     for (int i = 0; i < labels.length; ++i) {
       String label = labels[i];
-      //columns.add(DataColumn(label: Text(label, style: style)));
       headers.add(ExpandableTableHeader(
           cell: DataTableView.buildCell(
               Text(
@@ -109,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
 
       ExpandableTableCell dateTime = DataTableView.buildCell(
-          Text(data.dateTimeStr, style: style),
+          Text(data.shortDateTimeStr, style: style),
           color: color);
       ExpandableTableCell type = DataTableView.buildCell(
           Text(data.type.toStr, style: style),
@@ -191,7 +190,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return dataRow;
   }
 
-  void _updateDataRow() {
+  void _updateDataRow(List<AttendData> results) {
+    _dataList.clear();
+    _dataList.addAll(results);
     _dataRowList.clear();
     for (int i = 0; i < _dataList.length; ++i) {
       _dataRowList.add(_createDataRowsByAttendData(_dataList[i]));
@@ -199,8 +200,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _scrollToEnd() {
-    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 100), curve: Curves.ease);
+    // _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+    //     duration: const Duration(milliseconds: 100), curve: Curves.ease);
   }
 
   Future<void> _getByDateTime(DateTime dateTime) async {
@@ -211,11 +212,10 @@ class _MyHomePageState extends State<MyHomePage> {
       _isLoading = true;
       List<AttendData> result =
           await _attendanceService.getByDateTime(sheetId, sheetName, dateTime);
-      _dataList.clear();
-      _dataList.addAll(result);
       _isLoading = false;
-      _updateDataRow();
-      setState(() {});
+      setState(() {
+        _updateDataRow(result);
+      });
       await Future.delayed(Constants.wait100Milliseconds);
       setState(() {
         _scrollToEnd();
@@ -238,12 +238,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
       debugPrint('result = $result');
 
-      _dataList.clear();
-      _dataList.addAll(result);
       _isLoading = false;
 
-      _updateDataRow();
-      setState(() {});
+      setState(() {
+        _updateDataRow(result);
+      });
     } catch (e) {
       _isLoading = false;
       ErrorDialog.showErrorDialog(context, e);
@@ -262,10 +261,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _selectedDate = picked;
 
-    _dataList.clear();
-
-    _updateDataRow();
-    setState(() {});
+    setState(() {
+      _updateDataRow([]);
+    });
 
     _getByDateTime(picked);
   }
@@ -297,12 +295,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _onGetResults(List<AttendData> results) async {
-    _dataList.clear();
-    _dataList.addAll(results);
     _isLoading = false;
 
-    _updateDataRow();
-    setState(() {});
+    setState(() {
+      _updateDataRow(results);
+    });
     await Future.delayed(Constants.wait100Milliseconds);
     setState(() {
       _scrollToEnd();
@@ -335,6 +332,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    DateTime now = DateTime.now();
+    DateTime dateTime = DateTime(_selectedDate.year, _selectedDate.month,
+        _selectedDate.day, now.hour, now.minute, now.second);
+
     return Scaffold(
         appBar: MyAppBar(title: widget.title, version: Constants.version)
             .appBar(context),
@@ -363,7 +364,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         rows: _createRows(),
                         isLoading: _isLoading))),
             //_buttons(),
-            CommandButtons(_attendanceService, _chooseName, _selectedDate,
+            CommandButtons(_attendanceService, _chooseName, dateTime,
                 onPickDate: _onPickDate,
                 onGetResults: _onGetResults,
                 onError: _onError),

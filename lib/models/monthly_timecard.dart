@@ -35,35 +35,20 @@ class MonthlyTimecard {
 
       int day = data.date!.day;
 
-      var list = monthlyDataMap[month]!.dataMap[day]!.dataList; //.add(data);
-      list ??= [];
+      var list = monthlyDataMap[month]!.dataMap[day]!.dataList;
 
       list.add(data);
     }
-
-/*
-    monthlyDataMap.forEach((month, monthlyTimecard) {
-      monthlyTimecard.dataMap.forEach((day, dailyTimecard) {
-        List<TimecardData> dataList = dailyTimecard.dataList;
-        if (dataList.isEmpty) {
-          dataList
-              .add(TimecardData(dailyTimecard.name, date: dailyTimecard.date));
-        }
-      });
-    });
-    */
-
     return monthlyDataMap;
   }
 
   List<List<String>> toCsvFormat() {
-    //List<String> header = TimecardData.getElementName();
     List<List<String>> rows = [];
 
     dataMap.forEach((day, dailyTimecard) {
       List<TimecardData>? dataList = dailyTimecard.dataList;
 
-      for (int i = 0; i < dataList!.length; ++i) {
+      for (int i = 0; i < dataList.length; ++i) {
         TimecardData data = dataList[i];
         rows.add(data.toCsvFormat());
       }
