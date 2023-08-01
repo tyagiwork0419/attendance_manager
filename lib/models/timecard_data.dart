@@ -48,7 +48,7 @@ class TimecardData {
       monthDayStr,
       clockInTimeStr,
       clockOutTimeStr,
-      elapsedTime,
+      elapsedTimeStr,
     ];
 
     return csv;
@@ -59,16 +59,20 @@ class TimecardData {
         clockInTime: clockInTime, clockOutTime: clockOutTime);
   }
 
-  String get elapsedTime {
+  double get elapsedTime {
     if (clockInTime == null || clockOutTime == null) {
-      return '';
+      return 0;
     }
 
     double elapsed = (clockOutTime!.difference(clockInTime!).inMinutes / 60);
     if (_includingLunchTime()) {
       elapsed -= 1;
     }
-    return elapsed.toStringAsFixed(1);
+    return elapsed;
+  }
+
+  String get elapsedTimeStr {
+    return elapsedTime.toStringAsFixed(1);
   }
 
   bool _includingLunchTime() {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:attendance_manager/ui/components/command_buttons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/attend_data.dart';
@@ -58,23 +59,90 @@ class _MyHomePageState extends State<MyHomePage> {
       DateTime now = DateTime.now();
       _clockDate = now;
 
-      setState(() {});
+      //setState(() {});
     });
 
     _getByDateTime(now);
   }
 
-  List<DataColumn> _createDataColumns() {
-    List<String> dataColumnLabels = ['名前', '時刻', '種類', '削除'];
-    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+  ExpandableTableCell _createFirstHeaderCell() {
+    return DataTableView.buildCell(const Text('名前'), color: Constants.gray);
+  }
 
-    List<DataColumn> columns = [];
-    for (int i = 0; i < dataColumnLabels.length; ++i) {
-      String label = dataColumnLabels[i];
-      columns.add(DataColumn(label: Text(label, style: style)));
+  List<ExpandableTableHeader> _createHeaders() {
+    final List<String> labels = ['時刻', '種類', '削除'];
+    final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+
+    List<ExpandableTableHeader> headers = [];
+    for (int i = 0; i < labels.length; ++i) {
+      String label = labels[i];
+      //columns.add(DataColumn(label: Text(label, style: style)));
+      headers.add(ExpandableTableHeader(
+          cell: DataTableView.buildCell(
+              Text(
+                label,
+                style: style,
+              ),
+              color: Constants.gray)));
     }
 
-    return columns;
+    return headers;
+  }
+
+  List<ExpandableTableRow> _createRows() {
+    List<ExpandableTableRow> rows = [];
+    for (int i = 0; i < _dataList.length; ++i) {
+      AttendData data = _dataList[i];
+      Color color;
+      TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+
+      switch (data.type) {
+        case AttendType.clockIn:
+          color = Constants.green;
+          break;
+        case AttendType.clockOut:
+          color = Constants.red;
+          break;
+
+        default:
+          color = Colors.white;
+      }
+
+      ExpandableTableCell dateTime = DataTableView.buildCell(
+          Text(data.dateTimeStr, style: style),
+          color: color);
+      ExpandableTableCell type = DataTableView.buildCell(
+          Text(data.type.toStr, style: style),
+          color: color);
+      ExpandableTableCell delete = DataTableView.buildCell(
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () async {
+              debugPrint('presseed');
+              bool? delete = await showDialog<bool>(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (_) {
+                    return const DeleteDialog();
+                  });
+
+              if (delete!) {
+                _deleteRow(data);
+              }
+            },
+          ),
+          color: color);
+
+      ExpandableTableCell firstCell = DataTableView.buildFirstRowCell(
+          child: Text(data.name, style: style), color: color);
+      List<ExpandableTableCell> cells = [dateTime, type, delete];
+      ExpandableTableRow row =
+          ExpandableTableRow(firstCell: firstCell, cells: cells);
+
+      rows.add(row);
+    }
+
+    return rows;
   }
 
   DataRow _createDataRowsByAttendData(AttendData data) {
@@ -146,9 +214,8 @@ class _MyHomePageState extends State<MyHomePage> {
       _dataList.clear();
       _dataList.addAll(result);
       _isLoading = false;
-      setState(() {
-        _updateDataRow();
-      });
+      _updateDataRow();
+      setState(() {});
       await Future.delayed(Constants.wait100Milliseconds);
       setState(() {
         _scrollToEnd();
@@ -175,9 +242,8 @@ class _MyHomePageState extends State<MyHomePage> {
       _dataList.addAll(result);
       _isLoading = false;
 
-      setState(() {
-        _updateDataRow();
-      });
+      _updateDataRow();
+      setState(() {});
     } catch (e) {
       _isLoading = false;
       ErrorDialog.showErrorDialog(context, e);
@@ -197,9 +263,9 @@ class _MyHomePageState extends State<MyHomePage> {
     _selectedDate = picked;
 
     _dataList.clear();
-    setState(() {
-      _updateDataRow();
-    });
+
+    _updateDataRow();
+    setState(() {});
 
     _getByDateTime(picked);
   }
@@ -235,9 +301,8 @@ class _MyHomePageState extends State<MyHomePage> {
     _dataList.addAll(results);
     _isLoading = false;
 
-    setState(() {
-      _updateDataRow();
-    });
+    _updateDataRow();
+    setState(() {});
     await Future.delayed(Constants.wait100Milliseconds);
     setState(() {
       _scrollToEnd();
@@ -293,8 +358,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.5,
                     child: DataTableView(
                         scrollController: _scrollController,
-                        columns: _createDataColumns(),
-                        rows: _dataRowList,
+                        firstHeaderCell: _createFirstHeaderCell(),
+                        headers: _createHeaders(),
+                        rows: _createRows(),
                         isLoading: _isLoading))),
             //_buttons(),
             CommandButtons(_attendanceService, _chooseName, _selectedDate,

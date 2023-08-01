@@ -35,9 +35,13 @@ class MonthlyTimecard {
 
       int day = data.date!.day;
 
-      monthlyDataMap[month]!.dataMap[day]!.dataList.add(data);
+      var list = monthlyDataMap[month]!.dataMap[day]!.dataList; //.add(data);
+      list ??= [];
+
+      list.add(data);
     }
 
+/*
     monthlyDataMap.forEach((month, monthlyTimecard) {
       monthlyTimecard.dataMap.forEach((day, dailyTimecard) {
         List<TimecardData> dataList = dailyTimecard.dataList;
@@ -47,6 +51,7 @@ class MonthlyTimecard {
         }
       });
     });
+    */
 
     return monthlyDataMap;
   }
@@ -56,9 +61,9 @@ class MonthlyTimecard {
     List<List<String>> rows = [];
 
     dataMap.forEach((day, dailyTimecard) {
-      List<TimecardData> dataList = dailyTimecard.dataList;
+      List<TimecardData>? dataList = dailyTimecard.dataList;
 
-      for (int i = 0; i < dataList.length; ++i) {
+      for (int i = 0; i < dataList!.length; ++i) {
         TimecardData data = dataList[i];
         rows.add(data.toCsvFormat());
       }

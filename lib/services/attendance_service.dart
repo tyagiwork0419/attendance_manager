@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 
-import '../models/monthly_timecard.dart';
 import 'gas_client.dart';
 import '../models/attend_data.dart';
 
 class AttendanceService {
   final GasClient _gasClient;
 
-  String accessToken = '';
+  //String accessToken = '';
 
   AttendanceService(this._gasClient);
 
@@ -30,8 +29,7 @@ class AttendanceService {
     };
     debugPrint(parameters.toString());
 
-    var jsonResult =
-        await _gasClient.post('insertRows', accessToken, parameters);
+    var jsonResult = await _gasClient.post('insertRows', parameters);
     var result = _parseFromJson(jsonResult);
     return result;
   }
@@ -44,8 +42,7 @@ class AttendanceService {
       'dateTime': AttendData.dateTimeFormat.format(dateTime)
     };
 
-    var jsonResult =
-        await _gasClient.post('selectByDate', accessToken, parameters);
+    var jsonResult = await _gasClient.post('selectByDate', parameters);
 
     var result = _parseFromJson(jsonResult);
     return result;
@@ -59,8 +56,7 @@ class AttendanceService {
       'name': name,
     };
 
-    var jsonResult =
-        await _gasClient.post('selectByName', accessToken, parameters);
+    var jsonResult = await _gasClient.post('selectByName', parameters);
 
     var result = _parseFromJson(jsonResult);
 
@@ -92,11 +88,19 @@ class AttendanceService {
     };
     debugPrint(parameters.toString());
 
-    var jsonResult =
-        await _gasClient.post('updateById', accessToken, parameters);
+    var jsonResult = await _gasClient.post('updateById', parameters);
     var result = _parseFromJson(jsonResult);
     return result;
   }
 
-  Future<void> exportMonthlyTimecardToCsv(MonthlyTimecard timecard) async {}
+  Future<void> getEvents() async {
+    Map<String, Object> parameters = {};
+
+    var jsonResult = await _gasClient.post(
+      'getEvents',
+      parameters,
+    );
+
+    debugPrint('result = $jsonResult');
+  }
 }
