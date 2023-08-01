@@ -357,12 +357,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: SizedBox(
                     width: double.infinity,
                     height: MediaQuery.of(context).size.height * 0.5,
-                    child: DataTableView(
-                        scrollController: _scrollController,
-                        firstHeaderCell: _createFirstHeaderCell(),
-                        headers: _createHeaders(),
-                        rows: _createRows(),
-                        isLoading: _isLoading))),
+                    child: LayoutBuilder(
+                        builder: (context, constraints) => DataTableView(
+                            scrollController: _scrollController,
+                            firstHeaderCell: _createFirstHeaderCell(),
+                            headers: _createHeaders(),
+                            rows: _createRows(),
+                            firstColumnWidth: constraints.maxWidth * 0.3,
+                            defaultsColumnWidth: constraints.maxWidth * 0.3,
+                            headerHeight: 60,
+                            defaultsRowHeight: 60,
+                            isLoading: _isLoading)))),
             //_buttons(),
             CommandButtons(_attendanceService, _chooseName, dateTime,
                 onPickDate: _onPickDate,
