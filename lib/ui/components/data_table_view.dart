@@ -7,6 +7,10 @@ class DataTableView extends StatefulWidget {
   final List<ExpandableTableHeader> headers;
   final List<ExpandableTableRow> rows;
   final bool? isLoading;
+  final double headerHeight;
+  final double defaultsRowHeight;
+  final double firstColumnWidth;
+  final double defaultsColumnWidth;
 
   DataTableView(
       {super.key,
@@ -14,6 +18,10 @@ class DataTableView extends StatefulWidget {
       required this.firstHeaderCell,
       required this.headers,
       required this.rows,
+      this.headerHeight = 60,
+      this.defaultsRowHeight = 60,
+      this.firstColumnWidth = 60,
+      this.defaultsColumnWidth = 60,
       bool? isLoading})
       : scrollController = scrollController ?? ScrollController(),
         isLoading = isLoading ?? false;
@@ -78,10 +86,10 @@ class _DataTableViewState extends State<DataTableView> {
       firstHeaderCell: widget.firstHeaderCell,
       headers: widget.headers,
       rows: [],
-      headerHeight: 60,
-      defaultsRowHeight: 60,
-      firstColumnWidth: 140,
-      defaultsColumnWidth: 100,
+      headerHeight: widget.headerHeight,
+      defaultsRowHeight: widget.defaultsRowHeight,
+      firstColumnWidth: widget.firstColumnWidth,
+      defaultsColumnWidth: widget.defaultsColumnWidth,
     );
   }
 
@@ -96,11 +104,12 @@ class _DataTableViewState extends State<DataTableView> {
 
   ExpandableTable _buildExpandableTable() {
     controller.rows = widget.rows;
+    controller.firstColumnWidth = widget.firstColumnWidth;
+    controller.defaultsColumnWidth = widget.defaultsColumnWidth;
+    controller.headerHeight = widget.headerHeight;
+    controller.defaultsRowHeight = widget.defaultsRowHeight;
     return ExpandableTable(
       controller: controller,
-      //firstColumnWidth: 60,
-      //headerHeight: 60,
-      //defaultsRowHeight: 60,
     );
   }
 

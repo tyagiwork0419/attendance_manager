@@ -301,12 +301,17 @@ class _TimecardPageState extends State<TimecardPage> {
                       height: MediaQuery.of(context).size.height * 0.7,
                       child: Padding(
                         padding: Constants.topBottomPadding,
-                        child: DataTableView(
-                            //columns: _createDataColumnList(),
-                            firstHeaderCell: _createFirstHeaderCell(),
-                            headers: _createHeaders(),
-                            rows: _createRows(),
-                            isLoading: _isLoading),
+                        child: LayoutBuilder(
+                            builder: (context, constraints) => DataTableView(
+                                //columns: _createDataColumnList(),
+                                firstHeaderCell: _createFirstHeaderCell(),
+                                headers: _createHeaders(),
+                                rows: _createRows(),
+                                firstColumnWidth: constraints.maxWidth * 0.3,
+                                defaultsColumnWidth: constraints.maxWidth * 0.3,
+                                headerHeight: 60,
+                                defaultsRowHeight: 60,
+                                isLoading: _isLoading)),
                       )),
                   _commnadButtons(),
                 ])))));
