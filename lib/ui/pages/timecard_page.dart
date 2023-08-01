@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:html';
 
 import 'package:attendance_manager/models/monthly_timecard.dart';
 import 'package:csv/csv.dart';
@@ -9,6 +8,8 @@ import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
 import 'package:nil/nil.dart';
+
+import 'package:universal_html/html.dart' as html;
 
 import '../../application/constants.dart';
 import '../../models/attend_data.dart';
@@ -38,16 +39,11 @@ class TimecardPage extends StatefulWidget {
 }
 
 class _TimecardPageState extends State<TimecardPage> {
-  //final sheetId = '2023年';
   late String _name;
   late AttendanceService _service;
-  //final List<AttendData> _dataList = [];
 
   late MonthlyTimecard? _monthlyTimecard;
-  //final List<TimecardData> _timecardDataList = [];
 
-  //final List<DataRow> _dataRowList = [];
-  //final List<ExpandableTableRow> _tableRows = [];
   final DateFormat _yearMonthFormat = DateFormat('yyyy年MM月');
 
   late DateTime _selectedDate;
@@ -98,11 +94,8 @@ class _TimecardPageState extends State<TimecardPage> {
       return rows;
     }
     _monthlyTimecard!.dataMap.forEach((day, dailyTimecard) {
-      debugPrint('day:$day');
       rows.add(_createRow(dailyTimecard));
     });
-
-    debugPrint('rows = ${rows.toString()}');
 
     return rows;
   }
@@ -145,9 +138,11 @@ class _TimecardPageState extends State<TimecardPage> {
 
     List<ExpandableTableRow> children = [];
     List<TimecardData>? dataList = timecard.dataList;
-    for (int i = 0; i < dataList.length; ++i) {
-      var data = dataList[i];
-      children.add(_createDataRowByData(data, color));
+    if (dataList.length > 1) {
+      for (int i = 0; i < dataList.length; ++i) {
+        var data = dataList[i];
+        children.add(_createDataRowByData(data, color));
+      }
     }
     ExpandableTableRow row = ExpandableTableRow(
         firstCell: firstCell, cells: cells, children: children);
@@ -231,7 +226,7 @@ class _TimecardPageState extends State<TimecardPage> {
   Future<void> _exportData() async {
     String name = _monthlyTimecard!.name;
     String date = DateFormat('yyyy_MM').format(_monthlyTimecard!.date);
-    String fileName = '${name}_${date}.csv';
+    String fileName = '${name}_$date.csv';
 
     final header = TimecardData.getElementName();
     final rows = _monthlyTimecard!.toCsvFormat();
@@ -244,17 +239,18 @@ class _TimecardPageState extends State<TimecardPage> {
 
   void csvDownload(
       {required String fileName, required String csv, bool utf8BOM = false}) {
-    AnchorElement anchorElement;
+    if (!kIsWeb) return;
+    html.AnchorElement anchorElement;
     if (utf8BOM) {
       //　Excelで開く用に日本語を含む場合はUTF-8 BOMにする措置
       // ref. https://github.com/close2/csv/issues/41#issuecomment-899038353
       final bomUtf8Csv = [0xEF, 0xBB, 0xBF, ...utf8.encode(csv)];
       final base64CsvBytes = base64Encode(bomUtf8Csv);
-      anchorElement = AnchorElement(
+      anchorElement = html.AnchorElement(
         href: 'data:text/plain;charset=utf-8;base64,$base64CsvBytes',
       );
     } else {
-      anchorElement = AnchorElement(
+      anchorElement = html.AnchorElement(
         href: 'data:text/plain;charset=utf-8,$csv',
       );
     }
