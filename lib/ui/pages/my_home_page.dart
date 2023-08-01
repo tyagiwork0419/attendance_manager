@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:attendance_manager/ui/components/command_buttons.dart';
 import 'package:flutter/material.dart';
@@ -363,8 +364,10 @@ class _MyHomePageState extends State<MyHomePage> {
                             firstHeaderCell: _createFirstHeaderCell(),
                             headers: _createHeaders(),
                             rows: _createRows(),
-                            firstColumnWidth: constraints.maxWidth * 0.3,
-                            defaultsColumnWidth: constraints.maxWidth * 0.3,
+                            firstColumnWidth:
+                                max(120, constraints.maxWidth * 0.25),
+                            defaultsColumnWidth:
+                                max(120, constraints.maxWidth * 0.25),
                             headerHeight: 60,
                             defaultsRowHeight: 60,
                             isLoading: _isLoading)))),
