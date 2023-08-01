@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.22';
+  static const String version = '0.0.23';
 
   static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbw_XU82LUQ7FMhf6JHL8QRnG8FHAgPktqfn3Th9uNmq5dxhBBk44bOMNuxWJDIngJvE:run';
+      'https://script.googleapis.com/v1/scripts/AKfycbzwPus7qphVf3ze3bViNkQpHQYqU73k2E8AdQadU2ESJszEHvyB2_KxQWU8BZp7dp_j:run';
 
   static const String tokenUrl = 'https://oauth2.googleapis.com/token';
 
@@ -14,7 +14,7 @@ class Constants {
       '899530760082-skgo3k4sjv5la566sa598icfgdsusmgt.apps.googleusercontent.com';
   static const String clientSecret = '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';
   static const String refreshToken =
-      '1//04ArNHM647K8xCgYIARAAGAQSNwF-L9IrOIVijhjy9mgU-tHC5LDCmV9BINUXbhUal-bDSNrAUFsCZScnq5dg92CkEYphLjaNVUw';
+      '1//049NpcRbl9qEiCgYIARAAGAQSNwF-L9IrPOneYPhX5iL4BqAbJjlunaJM5BLO4AoxnPmAGOJy10tqMzmgfnpK55MwNxVoQEIQd0M';
   //final String scope =
   //'https://www.googleapis.com/auth/spreadsheets';
   //'https://www.googleapis.com/auth/drive';
@@ -29,7 +29,6 @@ class Constants {
     '西本'
   ];
 
-  //static const String
   static const double paddingMiddium = 10;
   static const String locale = 'ja';
 

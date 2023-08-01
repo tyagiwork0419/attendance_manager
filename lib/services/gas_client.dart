@@ -39,9 +39,8 @@ class GasClient {
     }
   }
 
-  Future<String> post(
-      String functionName, String accessToken, Object parameters) async {
-    accessToken = await getAccessToken();
+  Future<String> post(String functionName, Object parameters) async {
+    String accessToken = await getAccessToken();
 
     Uri uri = Uri.parse(_apiUrl);
 

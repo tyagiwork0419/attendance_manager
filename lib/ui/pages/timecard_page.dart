@@ -5,11 +5,14 @@ import 'package:attendance_manager/models/monthly_timecard.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 import 'package:intl/intl.dart';
 import 'package:month_picker_dialog/month_picker_dialog.dart';
+import 'package:nil/nil.dart';
 
 import '../../application/constants.dart';
 import '../../models/attend_data.dart';
+import '../../models/daily_timecard.dart';
 import '../../models/timecard_data.dart';
 import '../../services/attendance_service.dart';
 import '../components/data_table_view.dart';
@@ -38,12 +41,13 @@ class _TimecardPageState extends State<TimecardPage> {
   //final sheetId = '2023年';
   late String _name;
   late AttendanceService _service;
-  final List<AttendData> _dataList = [];
+  //final List<AttendData> _dataList = [];
 
   late MonthlyTimecard? _monthlyTimecard;
   //final List<TimecardData> _timecardDataList = [];
 
-  final List<DataRow> _dataRowList = [];
+  //final List<DataRow> _dataRowList = [];
+  //final List<ExpandableTableRow> _tableRows = [];
   final DateFormat _yearMonthFormat = DateFormat('yyyy年MM月');
 
   late DateTime _selectedDate;
@@ -56,6 +60,7 @@ class _TimecardPageState extends State<TimecardPage> {
 
     _service = widget.service;
     _isLoading = false;
+    _monthlyTimecard = null;
 
     DateTime now = DateTime.now();
 
@@ -65,28 +70,48 @@ class _TimecardPageState extends State<TimecardPage> {
     _getByName(_name, now);
   }
 
-  List<DataColumn> _createDataColumnList() {
-    final List<String> dataColumnLabels = TimecardData.getElementName();
-    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
-
-    List<DataColumn> columns = [];
-    for (int i = 0; i < dataColumnLabels.length; ++i) {
-      String label = dataColumnLabels[i];
-      columns.add(DataColumn(label: Text(label, style: style)));
-    }
-
-    return columns;
+  ExpandableTableCell _createFirstHeaderCell() {
+    final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+    String label = TimecardData.getElementName().first;
+    return DataTableView.buildCell(Text(label, style: style),
+        color: Constants.gray);
   }
 
-  DataRow _createDataRowByAttendData(DateTime dateTime, TimecardData data) {
-    String date = data.monthDayStr;
-    String clockInTime = data.clockInTimeStr;
-    String clockOutTime = data.clockOutTimeStr;
-    String elapsedTime = data.elapsedTime;
-    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
-    Color color;
+  List<ExpandableTableHeader> _createHeaders() {
+    final List<String> labels = TimecardData.getElementName().sublist(1);
+    final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
-    switch (dateTime.weekday) {
+    List<ExpandableTableHeader> headers = [];
+    for (int i = 0; i < labels.length; ++i) {
+      String label = labels[i];
+      headers.add(ExpandableTableHeader(
+          cell: DataTableView.buildCell(Text(label, style: style),
+              color: Constants.gray)));
+    }
+
+    return headers;
+  }
+
+  List<ExpandableTableRow> _createRows() {
+    List<ExpandableTableRow> rows = [];
+    if (_monthlyTimecard == null) {
+      return rows;
+    }
+    _monthlyTimecard!.dataMap.forEach((day, dailyTimecard) {
+      debugPrint('day:$day');
+      rows.add(_createRow(dailyTimecard));
+    });
+
+    debugPrint('rows = ${rows.toString()}');
+
+    return rows;
+  }
+
+  ExpandableTableRow _createRow(DailyTimecard timecard) {
+    Color color;
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+
+    switch (timecard.date.weekday) {
       case DateTime.saturday:
       case DateTime.sunday:
         color = Constants.red;
@@ -96,16 +121,57 @@ class _TimecardPageState extends State<TimecardPage> {
         color = Constants.green;
     }
 
-    DataRow dataRow = DataRow(
-        color: MaterialStateColor.resolveWith((states) => color),
-        cells: [
-          DataCell(Text(date, style: style)),
-          DataCell(Text(clockInTime, style: style)),
-          DataCell(Text(clockOutTime, style: style)),
-          DataCell(Text(elapsedTime, style: style)),
-        ]);
+    ExpandableTableCell clockInTime = DataTableView.buildCell(
+        Text(
+          timecard.clockInTimeStr,
+          style: style,
+        ),
+        color: color);
+    ExpandableTableCell clockOutTime = DataTableView.buildCell(
+        Text(timecard.clockOutTimeStr, style: style),
+        color: color);
+    ExpandableTableCell elapsedTime = DataTableView.buildCell(
+        Text(timecard.elapsedTimeStr, style: style),
+        color: color);
 
-    return dataRow;
+    ExpandableTableCell firstCell = DataTableView.buildFirstRowCell(
+        child: Text(timecard.monthDayStr, style: style), color: color);
+    List<ExpandableTableCell> cells = [
+      //date,
+      clockInTime,
+      clockOutTime,
+      elapsedTime
+    ];
+
+    List<ExpandableTableRow> children = [];
+    List<TimecardData>? dataList = timecard.dataList;
+    for (int i = 0; i < dataList.length; ++i) {
+      var data = dataList[i];
+      children.add(_createDataRowByData(data, color));
+    }
+    ExpandableTableRow row = ExpandableTableRow(
+        firstCell: firstCell, cells: cells, children: children);
+
+    return row;
+  }
+
+  ExpandableTableRow _createDataRowByData(TimecardData data, Color color) {
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+    var clockInTime = DataTableView.buildCell(
+        Text(data.clockInTimeStr, style: style),
+        color: color);
+    var clockOutTime = DataTableView.buildCell(
+        Text(data.clockOutTimeStr, style: style),
+        color: color);
+    var elapsedTime = DataTableView.buildCell(
+        Text(data.elapsedTimeStr, style: style),
+        color: color);
+
+    var row = ExpandableTableRow(
+        firstCell: DataTableView.buildCell(nil, color: color),
+        cells: [clockInTime, clockOutTime, elapsedTime]);
+
+    return row;
   }
 
   Future<void> _getByName(String name, DateTime dateTime) async {
@@ -116,13 +182,9 @@ class _TimecardPageState extends State<TimecardPage> {
       _isLoading = true;
       List<AttendData> result =
           await _service.getByName(sheetId, sheetName, name);
-
-      _dataList.clear();
-      _dataList.addAll(result);
-
       _isLoading = false;
       setState(() {
-        _updateDataRow();
+        _updateTimecard(result);
       });
     } catch (e) {
       _isLoading = false;
@@ -130,21 +192,10 @@ class _TimecardPageState extends State<TimecardPage> {
     }
   }
 
-  void _updateDataRow() {
-    _dataRowList.clear();
-    //_timecardDataList.clear();
-
+  void _updateTimecard(List<AttendData> dataList) {
     Map<int, MonthlyTimecard> monthlyTimecardMap = MonthlyTimecard.create(
-        _name, _selectedDate.year, _selectedDate.month, _dataList);
+        _name, _selectedDate.year, _selectedDate.month, dataList);
     _monthlyTimecard = monthlyTimecardMap[_selectedDate.month];
-
-    _monthlyTimecard!.dataMap.forEach((day, dailyTimecard) {
-      List<TimecardData> dataList = dailyTimecard.dataList;
-      for (int i = 0; i < dataList.length; ++i) {
-        TimecardData data = dailyTimecard.dataList[i];
-        _dataRowList.add(_createDataRowByAttendData(data.date!, data));
-      }
-    });
   }
 
   Future<void> _selectMonth() async {
@@ -160,9 +211,8 @@ class _TimecardPageState extends State<TimecardPage> {
 
     // 選択されて日付で更新
     _selectedDate = selectedDate;
-    _dataList.clear();
     setState(() {
-      _updateDataRow();
+      //_updateDataRow();
     });
 
     _getByName(widget.name, _selectedDate);
@@ -183,40 +233,27 @@ class _TimecardPageState extends State<TimecardPage> {
     String date = DateFormat('yyyy_MM').format(_monthlyTimecard!.date);
     String fileName = '${name}_${date}.csv';
 
-    //final csv = const ListToCsvConverter(fieldDelimiter: ';')
     final header = TimecardData.getElementName();
     final rows = _monthlyTimecard!.toCsvFormat();
+    final csv = const ListToCsvConverter().convert([header, ...rows]);
 
     if (kIsWeb == true) {
-      //AnchorElement(href: 'data:text/plain;charset=utf-8,$csv')
-      //csvDownload(fileName: fileName, csv: csv, utf8BOM: true);
-      csvDownload(
-          fileName: fileName, header: header, rows: rows, utf8BOM: true);
+      csvDownload(fileName: fileName, csv: csv, utf8BOM: true);
     }
   }
 
   void csvDownload(
-      {required String fileName,
-      required List<String> header,
-      required List<List<String>> rows,
-      bool utf8BOM = false}) {
+      {required String fileName, required String csv, bool utf8BOM = false}) {
     AnchorElement anchorElement;
     if (utf8BOM) {
       //　Excelで開く用に日本語を含む場合はUTF-8 BOMにする措置
       // ref. https://github.com/close2/csv/issues/41#issuecomment-899038353
-      //final csv = const ListToCsvConverter(fieldDelimiter: ';').convert(
-      final csv = const ListToCsvConverter().convert(
-        [header, ...rows],
-      );
       final bomUtf8Csv = [0xEF, 0xBB, 0xBF, ...utf8.encode(csv)];
       final base64CsvBytes = base64Encode(bomUtf8Csv);
       anchorElement = AnchorElement(
         href: 'data:text/plain;charset=utf-8;base64,$base64CsvBytes',
       );
     } else {
-      final csv = const ListToCsvConverter().convert(
-        [header, ...rows],
-      );
       anchorElement = AnchorElement(
         href: 'data:text/plain;charset=utf-8,$csv',
       );
@@ -269,8 +306,10 @@ class _TimecardPageState extends State<TimecardPage> {
                       child: Padding(
                         padding: Constants.topBottomPadding,
                         child: DataTableView(
-                            columns: _createDataColumnList(),
-                            rows: _dataRowList,
+                            //columns: _createDataColumnList(),
+                            firstHeaderCell: _createFirstHeaderCell(),
+                            headers: _createHeaders(),
+                            rows: _createRows(),
                             isLoading: _isLoading),
                       )),
                   _commnadButtons(),

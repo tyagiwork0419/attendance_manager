@@ -41,6 +41,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   csv:
+  flutter_expandable_table:
 
 
 
