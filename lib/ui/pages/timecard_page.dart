@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:attendance_manager/models/monthly_timecard.dart';
 import 'package:csv/csv.dart';
@@ -307,8 +308,10 @@ class _TimecardPageState extends State<TimecardPage> {
                                 firstHeaderCell: _createFirstHeaderCell(),
                                 headers: _createHeaders(),
                                 rows: _createRows(),
-                                firstColumnWidth: constraints.maxWidth * 0.3,
-                                defaultsColumnWidth: constraints.maxWidth * 0.3,
+                                firstColumnWidth:
+                                    max(120, constraints.maxWidth * 0.25),
+                                defaultsColumnWidth:
+                                    max(120, constraints.maxWidth * 0.25),
                                 headerHeight: 60,
                                 defaultsRowHeight: 60,
                                 isLoading: _isLoading)),
