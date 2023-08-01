@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 
-import '../../application/constants.dart';
-
 class DataTableView extends StatefulWidget {
   final ScrollController? scrollController;
-  //final List<DataColumn> columns;
   final ExpandableTableCell firstHeaderCell;
   final List<ExpandableTableHeader> headers;
-  //final List<String> columnLabels;
-  //final List<DataRow>? rows;
   final List<ExpandableTableRow> rows;
-  //final MonthlyTimecard _monthlyTimecard;
   final bool? isLoading;
 
   DataTableView(
@@ -46,7 +40,9 @@ class DataTableView extends StatefulWidget {
             children: [
               SizedBox(
                 width: 24 * details.row!.address.length.toDouble(),
-                child: details.row?.children != null
+                //width: 30,
+                child: (details.row?.children != null &&
+                        details.row!.children!.length > 1)
                     ? Align(
                         alignment: Alignment.centerRight,
                         child: AnimatedRotation(
@@ -84,8 +80,8 @@ class _DataTableViewState extends State<DataTableView> {
       rows: [],
       headerHeight: 60,
       defaultsRowHeight: 60,
-      defaultsColumnWidth: 200,
-      firstColumnWidth: 200,
+      firstColumnWidth: 140,
+      defaultsColumnWidth: 100,
     );
   }
 
@@ -100,15 +96,22 @@ class _DataTableViewState extends State<DataTableView> {
 
   ExpandableTable _buildExpandableTable() {
     controller.rows = widget.rows;
-    return ExpandableTable(controller: controller);
+    return ExpandableTable(
+      controller: controller,
+      //firstColumnWidth: 60,
+      //headerHeight: 60,
+      //defaultsRowHeight: 60,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
       Container(
-          decoration: BoxDecoration(border: Border.all()),
-          child: LayoutBuilder(
+        decoration: BoxDecoration(border: Border.all()),
+        child: _buildExpandableTable(),
+      ),
+      /*child: LayoutBuilder(
               builder: ((context, constraints) => Scrollbar(
                   thumbVisibility: true,
                   scrollbarOrientation: ScrollbarOrientation.bottom,
@@ -129,7 +132,7 @@ class _DataTableViewState extends State<DataTableView> {
                                       minWidth: constraints.maxWidth,
                                       minHeight: constraints.minHeight,
                                       maxHeight: constraints.maxHeight),
-                                  child: _buildExpandableTable())))))))),
+                                  child: _buildExpandableTable())))))))),*/
       if (widget.isLoading!) _loading(),
     ]);
   }
