@@ -77,9 +77,17 @@ class MonthlyTimecard {
     dataMap.forEach((day, dailyTimecard) {
       List<TimecardData>? dataList = dailyTimecard.dataList;
 
+      if (dataList.isEmpty) {
+        rows.add(
+            [dailyTimecard.monthDayStr, '', '', '', dailyTimecard.remarksStr]);
+        return;
+      }
+
       for (int i = 0; i < dataList.length; ++i) {
         TimecardData data = dataList[i];
-        rows.add(data.toCsvFormat());
+        List<String> strs = data.toCsvFormat();
+        strs.add(dailyTimecard.remarksStr);
+        rows.add(strs);
       }
     });
 
