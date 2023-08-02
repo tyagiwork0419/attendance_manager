@@ -26,4 +26,8 @@ extension DateTimeExtension on DateTime {
         DateTime(year, month + 1, 1).subtract(const Duration(days: 1));
     return lastDate.day;
   }
+
+  bool get isWeekday {
+    return (weekday != DateTime.saturday && weekday != DateTime.sunday);
+  }
 }

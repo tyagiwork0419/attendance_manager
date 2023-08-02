@@ -105,7 +105,6 @@ class _CommandButtonsState extends State<CommandButtons> {
         builder: (_) {
           return DateTimePickerDialog(
               dateTime: widget.dateTime,
-              //nameList: _nameList,
               selectedName: widget.name,
               selectedType: type);
         });

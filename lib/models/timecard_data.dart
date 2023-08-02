@@ -11,6 +11,8 @@ class TimecardData {
   late DateTime? clockInTime;
   late DateTime? clockOutTime;
 
+  bool isHoliday = false;
+
   final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
 
   TimecardData(this.name, {this.date, this.clockInTime, this.clockOutTime}) {
@@ -37,10 +39,6 @@ class TimecardData {
 
   String get clockOutTimeStr {
     return clockOutTime != null ? DateFormat.Hm().format(clockOutTime!) : '';
-  }
-
-  static List<String> getElementName() {
-    return ['日付', '出勤', '退勤', '時間'];
   }
 
   List<String> toCsvFormat() {
@@ -76,9 +74,7 @@ class TimecardData {
   }
 
   bool _includingLunchTime() {
-    bool isWeekday = (clockInTime!.weekday != DateTime.saturday ||
-        clockInTime!.weekday != DateTime.sunday);
-
+    bool isWeekday = clockInTime!.isWeekday;
     bool includinglunchTime =
         (clockInTime!.hour <= 11 && clockOutTime!.hour >= 14);
 
