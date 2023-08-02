@@ -17,9 +17,11 @@ import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage(
+      {super.key, required this.title, required this.attendanceService});
 
   final String title;
+  final AttendanceService attendanceService;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -28,7 +30,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final List<DataRow> _dataRowList = [];
 
-  late GasClient _gasClient;
+  //late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
   final ScrollController _scrollController = ScrollController();
@@ -47,9 +49,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _gasClient = GasClient(Constants.clientId, Constants.clientSecret,
-        Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
-    _attendanceService = AttendanceService(_gasClient);
+
+    _attendanceService = widget.attendanceService;
 
     DateTime now = DateTime.now();
     _clockDate = now;
