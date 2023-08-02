@@ -51,6 +51,10 @@ class _TimecardPageState extends State<TimecardPage> {
 
   late bool _isLoading;
 
+  List<String> get _columnNames {
+    return ['日付', '出勤', '退勤', '時間', '備考'];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -69,13 +73,13 @@ class _TimecardPageState extends State<TimecardPage> {
 
   ExpandableTableCell _createFirstHeaderCell() {
     final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
-    String label = TimecardData.getElementName().first;
+    String label = _columnNames.first;
     return DataTableView.buildCell(Text(label, style: style),
         color: Constants.gray);
   }
 
   List<ExpandableTableHeader> _createHeaders() {
-    final List<String> labels = TimecardData.getElementName().sublist(1);
+    final List<String> labels = _columnNames.sublist(1);
     final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<ExpandableTableHeader> headers = [];
@@ -98,6 +102,8 @@ class _TimecardPageState extends State<TimecardPage> {
       rows.add(_createRow(dailyTimecard));
     });
 
+    rows.add(_createSum(_monthlyTimecard!));
+
     return rows;
   }
 
@@ -105,14 +111,10 @@ class _TimecardPageState extends State<TimecardPage> {
     Color color;
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
-    switch (timecard.date.weekday) {
-      case DateTime.saturday:
-      case DateTime.sunday:
-        color = Constants.red;
-        break;
-
-      default:
-        color = Constants.green;
+    if (timecard.isHoliday) {
+      color = Constants.red;
+    } else {
+      color = Constants.green;
     }
 
     ExpandableTableCell clockInTime = DataTableView.buildCell(
@@ -128,13 +130,18 @@ class _TimecardPageState extends State<TimecardPage> {
         Text(timecard.elapsedTimeStr, style: style),
         color: color);
 
+    ExpandableTableCell remarks = DataTableView.buildCell(
+        Text(timecard.remarksStr, style: style),
+        color: color);
+
     ExpandableTableCell firstCell = DataTableView.buildFirstRowCell(
         child: Text(timecard.monthDayStr, style: style), color: color);
     List<ExpandableTableCell> cells = [
       //date,
       clockInTime,
       clockOutTime,
-      elapsedTime
+      elapsedTime,
+      remarks,
     ];
 
     List<ExpandableTableRow> children = [];
@@ -162,10 +169,29 @@ class _TimecardPageState extends State<TimecardPage> {
     var elapsedTime = DataTableView.buildCell(
         Text(data.elapsedTimeStr, style: style),
         color: color);
+    var remarks = DataTableView.buildCell(nil, color: color);
 
     var row = ExpandableTableRow(
         firstCell: DataTableView.buildCell(nil, color: color),
-        cells: [clockInTime, clockOutTime, elapsedTime]);
+        cells: [clockInTime, clockOutTime, elapsedTime, remarks]);
+
+    return row;
+  }
+
+  ExpandableTableRow _createSum(MonthlyTimecard monthlyTimecard) {
+    TextStyle? style = Theme.of(context).textTheme.bodyMedium;
+    Color color = Colors.green;
+    var clockInTime = DataTableView.buildCell(nil, color: color);
+    var clockOutTime = DataTableView.buildCell(nil, color: color);
+    var elapsedTime = DataTableView.buildCell(
+        Text(monthlyTimecard.sumOfElapsedTimeStr, style: style),
+        color: color);
+    var remarks = DataTableView.buildCell(nil, color: color);
+
+    var row = ExpandableTableRow(
+        firstCell:
+            DataTableView.buildCell(Text('計', style: style), color: color),
+        cells: [clockInTime, clockOutTime, elapsedTime, remarks]);
 
     return row;
   }
@@ -189,9 +215,8 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   void _updateTimecard(List<AttendData> dataList) {
-    Map<int, MonthlyTimecard> monthlyTimecardMap = MonthlyTimecard.create(
+    _monthlyTimecard = _service.createMonthlyTimecard(
         _name, _selectedDate.year, _selectedDate.month, dataList);
-    _monthlyTimecard = monthlyTimecardMap[_selectedDate.month];
   }
 
   Future<void> _selectMonth() async {
@@ -229,7 +254,7 @@ class _TimecardPageState extends State<TimecardPage> {
     String date = DateFormat('yyyy_MM').format(_monthlyTimecard!.date);
     String fileName = '${name}_$date.csv';
 
-    final header = TimecardData.getElementName();
+    final header = _columnNames;
     final rows = _monthlyTimecard!.toCsvFormat();
     final csv = const ListToCsvConverter().convert([header, ...rows]);
 
@@ -309,9 +334,9 @@ class _TimecardPageState extends State<TimecardPage> {
                                 headers: _createHeaders(),
                                 rows: _createRows(),
                                 firstColumnWidth:
-                                    max(120, constraints.maxWidth * 0.25),
+                                    max(120, constraints.maxWidth * 0.2),
                                 defaultsColumnWidth:
-                                    max(120, constraints.maxWidth * 0.25),
+                                    max(120, constraints.maxWidth * 0.2),
                                 headerHeight: 60,
                                 defaultsRowHeight: 60,
                                 isLoading: _isLoading)),
