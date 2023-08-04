@@ -7,7 +7,6 @@ import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/attend_data.dart';
-import '../../services/gas_client.dart';
 import '../../services/attendance_service.dart';
 import '../../application/constants.dart';
 

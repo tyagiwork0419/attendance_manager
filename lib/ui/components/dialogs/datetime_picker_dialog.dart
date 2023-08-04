@@ -57,11 +57,8 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 border: TableBorder.all(),
                 columns: const [
               DataColumn(label: Text('名前')),
-              //DataColumn(label: Text('種類')),
-              //DataColumn(label: Text('日付')),
               DataColumn(label: Text('日付')),
               DataColumn(label: Text('時刻')),
-              //DataColumn(label: Text('削除')),
             ],
                 rows: [
               DataRow(cells: [
@@ -88,10 +85,16 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                     child: Text(_timeString, style: _textPickerStyle),
                     onPressed: () async {
                       final TimeOfDay? picked = await showTimePicker(
-                        context: context,
-                        initialTime: _time,
-                        initialEntryMode: TimePickerEntryMode.dial,
-                      );
+                          context: context,
+                          initialTime: _time,
+                          initialEntryMode: TimePickerEntryMode.dial,
+                          builder: (context, child) {
+                            return MediaQuery(
+                              data: MediaQuery.of(context)
+                                  .copyWith(alwaysUse24HourFormat: false),
+                              child: child!,
+                            );
+                          });
                       if (picked == null) {
                         return;
                       }
