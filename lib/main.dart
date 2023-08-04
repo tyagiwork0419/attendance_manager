@@ -42,6 +42,7 @@ class MyApp extends StatelessWidget {
           // is not restarted.
           primarySwatch: Colors.blue,
         ),
+        /*
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
         supportedLocales: const [
           Locale('ja'),
         ],
+        */
         home: MyHomePage(title: '勤怠管理', attendanceService: attendanceService));
   }
 }
