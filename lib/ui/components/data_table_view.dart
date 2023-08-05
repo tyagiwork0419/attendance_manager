@@ -90,6 +90,7 @@ class _DataTableViewState extends State<DataTableView> {
       defaultsRowHeight: widget.defaultsRowHeight,
       firstColumnWidth: widget.firstColumnWidth,
       defaultsColumnWidth: widget.defaultsColumnWidth,
+      scrollShadowColor: Colors.black12,
     );
   }
 
