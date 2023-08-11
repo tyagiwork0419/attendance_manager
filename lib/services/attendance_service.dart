@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 
 import '../models/calendar.dart';
-import '../models/date.dart';
 import '../models/monthly_timecard.dart';
 import 'gas_client.dart';
 import '../models/attend_data.dart';
@@ -79,55 +78,6 @@ class AttendanceService {
     return result;
   }
 
-/*
-  Future<List<AttendData>> initializeAndGetByDateTime(
-      String fileName, String sheetName, DateTime dateTime) async {
-    Map<String, Object> parameters = {
-      'fileName': fileName,
-      'sheetName': sheetName,
-      'dateTime': AttendData.dateTimeFormat.format(dateTime)
-    };
-
-    var jsonResult = await _gasClient.post('getInitializeData', parameters);
-
-    Map<String, dynamic> jsonObj = json.decode(jsonResult);
-    List<dynamic> datasJson = jsonObj['datas'];
-    List<dynamic> eventsJson = jsonObj['events'];
-
-    var datas = _parseAttendDataFromJson(datasJson);
-    var events = _parseCalendarEventFromJson(eventsJson);
-    print(events);
-
-    _calendar.setEvents(events);
-
-    return datas;
-  }
-  */
-
-  List<AttendData> _parseAttendDataFromJson(List<dynamic> jsonObj) {
-    //List<dynamic> jsonObj = json.decode(jsonResult);
-
-    List<AttendData> result = [];
-
-    for (int i = 0; i < jsonObj.length; ++i) {
-      var data = jsonObj[i];
-      var attendData = AttendData.fromJson(data);
-      result.add(attendData);
-    }
-    return result;
-  }
-
-  List<CalendarEvent> _parseCalendarEventFromJson(List<dynamic> events) {
-    List<CalendarEvent> result = [];
-    for (int i = 0; i < events.length; ++i) {
-      Map<String, dynamic> event = events[i];
-      CalendarEvent calendarEvent = CalendarEvent.fromJson(event);
-      result.add(calendarEvent);
-    }
-
-    return result;
-  }
-
   Future<List<AttendData>> updateById(
       String fileName, String sheetName, AttendData data) async {
     debugPrint('updateById');
@@ -155,12 +105,8 @@ class AttendanceService {
 
     debugPrint('result = $jsonResult');
 
-    //Map<String, dynamic> jsonObj = json.decode(jsonResult);
     List<dynamic> jsonObj = json.decode(jsonResult);
-    //List<dynamic> datasJson = jsonObj['datas'];
-    //List<dynamic> eventsJson = jsonObj['events'];
 
-    //var datas = _parseAttendDataFromJson(datasJson);
     var events = _parseCalendarEventFromJson(jsonObj);
 
     _calendar.setEvents(events);
@@ -174,5 +120,29 @@ class AttendanceService {
         MonthlyTimecard.create(name, year, month, dataList, _calendar);
     MonthlyTimecard monthlyTimecard = dataMap[month]!;
     return monthlyTimecard;
+  }
+
+  List<AttendData> _parseAttendDataFromJson(List<dynamic> jsonObj) {
+    //List<dynamic> jsonObj = json.decode(jsonResult);
+
+    List<AttendData> result = [];
+
+    for (int i = 0; i < jsonObj.length; ++i) {
+      var data = jsonObj[i];
+      var attendData = AttendData.fromJson(data);
+      result.add(attendData);
+    }
+    return result;
+  }
+
+  List<CalendarEvent> _parseCalendarEventFromJson(List<dynamic> events) {
+    List<CalendarEvent> result = [];
+    for (int i = 0; i < events.length; ++i) {
+      Map<String, dynamic> event = events[i];
+      CalendarEvent calendarEvent = CalendarEvent.fromJson(event);
+      result.add(calendarEvent);
+    }
+
+    return result;
   }
 }
