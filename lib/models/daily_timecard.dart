@@ -9,6 +9,7 @@ class DailyTimecard {
   final DateTime date;
   final List<CalendarEvent> events = [];
   final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
+  late List<TimecardData> dataList;
 
   bool get isHoliday {
     if (!date.isWeekday) {
@@ -64,14 +65,42 @@ class DailyTimecard {
       for (var event in events) {
         str += '${event.name}, ';
       }
+    }
 
+    var errs = errors;
+    if (errs.isNotEmpty) {
+      for (var error in errs) {
+        str += '$error, ';
+      }
+    }
+
+    if (str.length > 2) {
       str = str.substring(0, str.length - 2);
     }
 
     return str;
   }
 
-  late List<TimecardData> dataList;
+  List<String> get errors {
+    List<String> errs = [];
+    for (var data in dataList) {
+      for (var error in data.errors!) {
+        if (!errs.contains(error)) {
+          errs.add(error);
+        }
+      }
+    }
+
+    return errs;
+  }
+
+  bool get hasError {
+    return errors.isNotEmpty;
+  }
+
+  bool get hasMultipleData {
+    return dataList.length > 1;
+  }
 
   DailyTimecard(this.name, int year, int month, int day)
       : date = DateTime(year, month, day) {
