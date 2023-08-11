@@ -93,6 +93,7 @@ class _TimecardPageState extends State<TimecardPage> {
     return headers;
   }
 
+  // 列生成
   List<ExpandableTableRow> _createRows() {
     List<ExpandableTableRow> rows = [];
     if (_monthlyTimecard == null) {
@@ -102,16 +103,20 @@ class _TimecardPageState extends State<TimecardPage> {
       rows.add(_createRow(dailyTimecard));
     });
 
+    //合計
     rows.add(_createSum(_monthlyTimecard!));
 
     return rows;
   }
 
+  // 各列生成
   ExpandableTableRow _createRow(DailyTimecard timecard) {
     Color color;
     TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
-    if (timecard.isHoliday) {
+    if (timecard.hasError) {
+      color = Colors.red;
+    } else if (timecard.isHoliday) {
       color = Constants.red;
     } else {
       color = Constants.green;
@@ -146,7 +151,7 @@ class _TimecardPageState extends State<TimecardPage> {
 
     List<ExpandableTableRow> children = [];
     List<TimecardData>? dataList = timecard.dataList;
-    if (dataList.length > 1) {
+    if (timecard.hasMultipleData) {
       for (int i = 0; i < dataList.length; ++i) {
         var data = dataList[i];
         children.add(_createDataRowByData(data, color));
@@ -169,7 +174,8 @@ class _TimecardPageState extends State<TimecardPage> {
     var elapsedTime = DataTableView.buildCell(
         Text(data.elapsedTimeStr, style: style),
         color: color);
-    var remarks = DataTableView.buildCell(nil, color: color);
+    var remarks = DataTableView.buildCell(Text(data.errorsStr, style: style),
+        color: color);
 
     var row = ExpandableTableRow(
         firstCell: DataTableView.buildCell(nil, color: color),

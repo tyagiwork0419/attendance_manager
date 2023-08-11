@@ -8,15 +8,43 @@ import 'package:attendance_manager/services/gas_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('authorizationCodeGrant', () async {
-    GasClient gasClient = GasClient(Constants.clientId, Constants.clientSecret,
+  late GasClient gasClient;
+  late AttendanceService service;
+  const String testFileName = 'test';
+  const String testSheetName = 'test';
+  const String testName = 'test';
+
+  setUp(() {
+    gasClient = GasClient(Constants.clientId, Constants.clientSecret,
         Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
 
-    AttendanceService service = AttendanceService(gasClient);
+    service = AttendanceService(gasClient);
+  });
 
+  test('setClock Test', () async {
+    var type = AttendType.clockIn;
+    var dateTime = DateTime(2023, 8, 10, 0, 0, 0);
+    var data = AttendData(testName, type, dateTime);
+
+    var testResult =
+        '{done: true, response: {@type: type.googleapis.com/google.apps.script.v1.ExecutionResponse, result: [{"id":2,"name":"test","type":"出勤","dateTime":"2023/08/10 00:00:00","status":"normal"}]}}';
+
+    var results = await service.setClock(testFileName, testSheetName, data);
+    expect(results[0].name, testName);
+    //print('results = $results');
+  });
+  test('getByDateTime Test', () async {});
+  test('getByName Test', () async {});
+  test('updateById Test', () async {});
+  test('getEvents Test', () async {
     await service.getEvents();
   });
 
+  test('createMonthlyTimecard Test', () async {});
+  test('_parseAttendDataFromJson Test', () async {});
+  test('_parseCanlendarEventFromJson Test', () async {});
+
+/*
   test('clientCredentialGrant', () async {
     List<AttendData> dataList = [];
     List<CalendarEvent> eventList = [];
@@ -38,4 +66,5 @@ void main() {
       eventList.add(calendarEvent);
     }
   });
+  */
 }
