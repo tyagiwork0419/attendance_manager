@@ -15,6 +15,7 @@ import 'package:universal_html/html.dart' as html;
 import '../../application/constants.dart';
 import '../../models/attend_data.dart';
 import '../../models/daily_timecard.dart';
+import '../../models/encoder.dart';
 import '../../models/timecard_data.dart';
 import '../../services/attendance_service.dart';
 import '../components/data_table_view.dart';
@@ -99,7 +100,7 @@ class _TimecardPageState extends State<TimecardPage> {
     if (_monthlyTimecard == null) {
       return rows;
     }
-    _monthlyTimecard!.dataMap.forEach((day, dailyTimecard) {
+    _monthlyTimecard!.dailyTimecards.forEach((day, dailyTimecard) {
       rows.add(_createRow(dailyTimecard));
     });
 
@@ -174,7 +175,7 @@ class _TimecardPageState extends State<TimecardPage> {
     var elapsedTime = DataTableView.buildCell(
         Text(data.elapsedTimeStr, style: style),
         color: color);
-    var remarks = DataTableView.buildCell(Text(data.errorsStr, style: style),
+    var remarks = DataTableView.buildCell(Text(data.remarksStr, style: style),
         color: color);
 
     var row = ExpandableTableRow(
@@ -210,12 +211,17 @@ class _TimecardPageState extends State<TimecardPage> {
       _isLoading = true;
       List<AttendData> result =
           await _service.getByName(sheetId, sheetName, name);
-      _isLoading = false;
+      if (!mounted) {
+        return;
+      }
       setState(() {
+        _isLoading = false;
         _updateTimecard(result);
       });
     } catch (e) {
-      _isLoading = false;
+      setState(() {
+        _isLoading = false;
+      });
       ErrorDialog.showErrorDialog(context, e);
     }
   }
@@ -276,8 +282,7 @@ class _TimecardPageState extends State<TimecardPage> {
     if (utf8BOM) {
       //　Excelで開く用に日本語を含む場合はUTF-8 BOMにする措置
       // ref. https://github.com/close2/csv/issues/41#issuecomment-899038353
-      final bomUtf8Csv = [0xEF, 0xBB, 0xBF, ...utf8.encode(csv)];
-      final base64CsvBytes = base64Encode(bomUtf8Csv);
+      final base64CsvBytes = Encoder.toUtf8WithBOM(csv);
       anchorElement = html.AnchorElement(
         href: 'data:text/plain;charset=utf-8;base64,$base64CsvBytes',
       );

@@ -25,7 +25,7 @@ class AttendanceService {
     return '${dateTime.month}月';
   }
 
-  Future<List<AttendData>> setClock(
+  Future<List<AttendData>> setAttendData(
       String fileName, String sheetName, AttendData data) async {
     debugPrint('setClock');
     Map<String, dynamic> jsonObj = data.toJson();
@@ -116,9 +116,9 @@ class AttendanceService {
   MonthlyTimecard createMonthlyTimecard(
       String name, int year, int month, List<AttendData> dataList) {
     debugPrint('createMonthlyTimecard');
-    Map<int, MonthlyTimecard> dataMap =
+    MonthlyTimecard monthlyTimecard =
         MonthlyTimecard.create(name, year, month, dataList, _calendar);
-    MonthlyTimecard monthlyTimecard = dataMap[month]!;
+    //MonthlyTimecard monthlyTimecard = dataMap[month]!;
     return monthlyTimecard;
   }
 

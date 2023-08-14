@@ -8,6 +8,7 @@ class DailyTimecard {
   final String name;
   final DateTime date;
   final List<CalendarEvent> events = [];
+  //final List<String> remarks = [];
   final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
   late List<TimecardData> dataList;
 
@@ -74,17 +75,49 @@ class DailyTimecard {
       }
     }
 
-    if (str.length > 2) {
+    if (hasPaidHoliday) {
+      str += '有休, ';
+    }
+
+    if (str.length >= 2) {
       str = str.substring(0, str.length - 2);
     }
 
     return str;
   }
 
+  bool get hasPaidHoliday {
+    //List<String> remarks = [];
+    for (var data in dataList) {
+      //for (var remark in data.remarks) {
+      if (data.remarks.isNotEmpty) {
+        return true;
+        /*
+        if (!remarks.contains(remark)) {
+          remarks.add(remark);
+        }
+        */
+      }
+    }
+
+    return false;
+  }
+
+/*
+  List<String> get remarks {
+    String str = '';
+    for (var data in dataList) {
+      if (data.remarks.isNotEmpty) {
+        str += data.remarksStr;
+      }
+    }
+  }
+  */
+
   List<String> get errors {
     List<String> errs = [];
     for (var data in dataList) {
-      for (var error in data.errors!) {
+      for (var error in data.errors) {
         if (!errs.contains(error)) {
           errs.add(error);
         }
