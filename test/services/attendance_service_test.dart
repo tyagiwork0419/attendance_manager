@@ -29,7 +29,8 @@ void main() {
     var testResult =
         '{done: true, response: {@type: type.googleapis.com/google.apps.script.v1.ExecutionResponse, result: [{"id":2,"name":"test","type":"出勤","dateTime":"2023/08/10 00:00:00","status":"normal"}]}}';
 
-    var results = await service.setClock(testFileName, testSheetName, data);
+    var results =
+        await service.setAttendData(testFileName, testSheetName, data);
     expect(results[0].name, testName);
     //print('results = $results');
   });

@@ -12,7 +12,8 @@ class TimecardData {
 
   bool isHoliday = false;
 
-  late List<String>? errors;
+  late List<String> errors;
+  late List<String> remarks;
 
   final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
 
@@ -23,21 +24,10 @@ class TimecardData {
       //{this.date, this.clockInTime, this.clockOutTime, this.errors}) {
       {this.clockInTime,
       this.clockOutTime,
-      this.errors}) {
-    errors = errors ?? [];
-    /*
-    if (date != null) {
-      return;
-    }
-
-    if (clockInTime != null) {
-      date = DateTime(clockInTime!.year, clockInTime!.month, clockInTime!.day);
-    } else if (clockOutTime != null) {
-      date =
-          DateTime(clockOutTime!.year, clockOutTime!.month, clockOutTime!.day);
-    }
-    */
-  }
+      List<String>? errors,
+      List<String>? remarks})
+      : errors = errors ?? [],
+        remarks = remarks ?? [];
 
   DateTime? get date {
     if (clockInTime != null) {
@@ -76,7 +66,10 @@ class TimecardData {
 
   TimecardData copyWith() {
     return TimecardData(name,
-        clockInTime: clockInTime, clockOutTime: clockOutTime, errors: errors);
+        clockInTime: clockInTime,
+        clockOutTime: clockOutTime,
+        remarks: remarks,
+        errors: errors);
   }
 
   double get elapsedTime {
@@ -95,10 +88,32 @@ class TimecardData {
     return elapsedTime.toStringAsFixed(1);
   }
 
+  String get remarksStr {
+    String str = '';
+    if (remarks.isNotEmpty) {
+      for (var remark in remarks) {
+        str += '$remark, ';
+      }
+    }
+
+    if (errors.isNotEmpty) {
+      for (var error in errors) {
+        str += '$error, ';
+      }
+    }
+
+    if (str.length >= 2) {
+      str = str.substring(0, str.length - 2);
+    }
+
+    return str;
+  }
+
+/*
   String get errorsStr {
     String str = '';
-    if (errors!.isNotEmpty) {
-      for (var error in errors!) {
+    if (errors.isNotEmpty) {
+      for (var error in errors) {
         str += '$error, ';
       }
 
@@ -107,6 +122,7 @@ class TimecardData {
 
     return str;
   }
+  */
 
   bool _includingLunchTime() {
     bool isWeekday = clockInTime!.isWeekday;
@@ -117,6 +133,17 @@ class TimecardData {
   }
 
   static void addData(List<TimecardData> list, CreateState state) {}
+
+  static TimecardData getPaidHolidayData(AttendData attendData) {
+    DateTime dt = attendData.dateTime;
+    DateTime clockInTime = DateTime(dt.year, dt.month, dt.day, 0, 0, 0);
+    DateTime clockOutTime = DateTime(dt.year, dt.month, dt.day, 0, 0, 0);
+
+    return TimecardData(attendData.name,
+        clockInTime: clockInTime,
+        clockOutTime: clockOutTime,
+        remarks: attendData.remarks);
+  }
 
   static List<TimecardData> create(List<AttendData> attendDataList) {
     List<TimecardData> dataList = [];
@@ -131,6 +158,10 @@ class TimecardData {
         // データ作成時（出勤データを期待）
         case CreateState.setClockIn:
           switch (attendData.type) {
+            case AttendType.paidHoliday:
+              data = getPaidHolidayData(attendData);
+              dataList.add(data.copyWith());
+              break;
             case AttendType.clockIn:
               data = TimecardData(attendData.name,
                   clockInTime: attendData.dateTime);
@@ -142,7 +173,7 @@ class TimecardData {
                   data.clockOutTime = data.date!.endOfDay;
                 }
                 */
-                data.errors!.add(clockOutErrorStr);
+                data.errors.add(clockOutErrorStr);
                 //data.errors!.add('退勤時間未入力');
                 dataList.add(data.copyWith());
                 break;
@@ -156,7 +187,7 @@ class TimecardData {
               //error('error: 出勤データが足りません');
               data = TimecardData(attendData.name,
                   clockOutTime: attendData.dateTime);
-              data.errors!.add(clockInErrorStr);
+              data.errors.add(clockInErrorStr);
 
               /*
               // 先月末から24時回った場合
@@ -175,9 +206,15 @@ class TimecardData {
         // 退勤データ入力時（退勤データを期待）
         case CreateState.setClockOut:
           switch (attendData.type) {
+            case AttendType.paidHoliday:
+              data = getPaidHolidayData(attendData);
+              dataList.add(data.copyWith());
+              state = CreateState.setClockIn;
+              break;
+
             case AttendType.clockIn:
               //error('error: 退勤データが足りません');
-              data!.errors!.add(clockOutErrorStr);
+              data!.errors.add(clockOutErrorStr);
               dataList.add(data.copyWith());
 
               data = TimecardData(attendData.name,
@@ -190,7 +227,7 @@ class TimecardData {
                   data.clockOutTime = data.date!.endOfDay;
                 }
                 */
-                data.errors!.add(clockOutErrorStr);
+                data.errors.add(clockOutErrorStr);
                 dataList.add(data.copyWith());
                 break;
               }
@@ -203,7 +240,7 @@ class TimecardData {
 
               int dayDiff = data!.clockInTime!.difference(clockOutTime).inDays;
 
-              //想定している動作、同じ日なら退勤時間を入力
+              // clockInTimeとclockOutTimeが同日か確認
               if (dayDiff == 0) {
                 data.clockOutTime = clockOutTime;
                 dataList.add(data.copyWith());
@@ -211,7 +248,7 @@ class TimecardData {
                 state = CreateState.setClockIn;
                 break;
               } else {
-                data.errors!.add('退勤時間未入力');
+                data.errors.add('退勤時間未入力');
                 dataList.add(data.copyWith());
 
                 data = TimecardData(attendData.name,
@@ -223,7 +260,7 @@ class TimecardData {
                 data.clockInTime = data.date!.startOfDay;
               }
               */
-                data.errors!.add('出勤時間未入力');
+                data.errors.add('出勤時間未入力');
                 dataList.add(data.copyWith());
 
                 state = CreateState.setClockIn;
