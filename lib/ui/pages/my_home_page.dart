@@ -58,9 +58,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     Timer.periodic(Constants.wait100Milliseconds, (Timer timer) {
       DateTime now = DateTime.now();
-      _clockDate = now;
 
-      setState(() {});
+      if (_clockDate.difference(now) >= const Duration(minutes: 1)) {
+        setState(() {
+          _clockDate = now;
+        });
+      }
     });
 
     _getByDateTime(now);
@@ -102,6 +105,9 @@ class _MyHomePageState extends State<MyHomePage> {
           break;
         case AttendType.clockOut:
           color = Constants.red;
+          break;
+        case AttendType.paidHoliday:
+          color = Constants.yellow;
           break;
 
         default:
@@ -210,42 +216,60 @@ class _MyHomePageState extends State<MyHomePage> {
     String sheetName = _attendanceService.getSheetName(dateTime);
 
     try {
-      _isLoading = true;
+      setState(() {
+        _isLoading = true;
+      });
       List<AttendData> result =
           await _attendanceService.getByDateTime(sheetId, sheetName, dateTime);
-      _isLoading = false;
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
+        _isLoading = false;
         _updateDataRow(result);
       });
       await Future.delayed(Constants.wait100Milliseconds);
+      if (!mounted) {
+        return;
+      }
+
       setState(() {
         _scrollToEnd();
       });
     } catch (e) {
-      _isLoading = false;
+      setState(() {
+        _isLoading = false;
+      });
       ErrorDialog.showErrorDialog(context, e);
     }
   }
 
   Future<void> _deleteRow(AttendData data) async {
     try {
-      _isLoading = true;
+      setState(() {
+        _isLoading = true;
+      });
       debugPrint('delete row');
       String sheetId = _attendanceService.getSheetId(data.dateTime);
       String sheetName = _attendanceService.getSheetName(data.dateTime);
       data.status = Status.deleted;
       List<AttendData> result =
           await _attendanceService.updateById(sheetId, sheetName, data);
+      if (!mounted) {
+        return;
+      }
 
       debugPrint('result = $result');
 
-      _isLoading = false;
-
       setState(() {
+        _isLoading = false;
         _updateDataRow(result);
       });
     } catch (e) {
-      _isLoading = false;
+      setState(() {
+        _isLoading = false;
+      });
       ErrorDialog.showErrorDialog(context, e);
     }
   }
@@ -302,6 +326,10 @@ class _MyHomePageState extends State<MyHomePage> {
       _updateDataRow(results);
     });
     await Future.delayed(Constants.wait100Milliseconds);
+    if (!mounted) {
+      return;
+    }
+
     setState(() {
       _scrollToEnd();
     });

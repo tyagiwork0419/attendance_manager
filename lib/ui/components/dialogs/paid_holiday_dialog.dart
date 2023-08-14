@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../models/attend_data.dart';
 
+/*
 extension TimeOfDayConverter on TimeOfDay {
   String to24hours() {
     final hour = this.hour.toString().padLeft(2, '0');
@@ -10,47 +11,50 @@ extension TimeOfDayConverter on TimeOfDay {
     return '$hour:$min';
   }
 }
+*/
 
-class DateTimePickerDialog extends StatefulWidget {
+class PaidHolidayDialog extends StatefulWidget {
   final String selectedName;
-  final AttendType selectedType;
+  //final AttendType selectedType;
   final DateTime dateTime;
-  const DateTimePickerDialog(
-      {super.key,
-      required this.dateTime,
-      required this.selectedName,
-      required this.selectedType});
+
+  const PaidHolidayDialog({
+    super.key,
+    required this.dateTime,
+    required this.selectedName,
+  }); //required this.selectedType});
 
   @override
-  State<DateTimePickerDialog> createState() => _DateTimePickerDialogState();
+  State<PaidHolidayDialog> createState() => _PaidHolidayDialogState();
 }
 
-class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
+class _PaidHolidayDialogState extends State<PaidHolidayDialog> {
   String _dateString = '';
-  String _timeString = '';
+  //String _timeString = '';
   //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
   final DateFormat _dateFormat = DateFormat('MM/dd');
+  final list = <PaidHolidayType>[PaidHolidayType.full, PaidHolidayType.half];
 
   final TextStyle _textPickerStyle = const TextStyle(fontSize: 20);
 
   late DateTime _date;
-  late TimeOfDay _time;
+  late PaidHolidayType _selectedValue;
+  //late TimeOfDay _time;
 
   @override
   void initState() {
     super.initState();
 
     _date = widget.dateTime;
-    _time =
-        TimeOfDay(hour: widget.dateTime.hour, minute: widget.dateTime.minute);
     _dateString = _dateFormat.format(_date);
-    _timeString = _time.to24hours();
+    _selectedValue = list[0];
+    //_timeString = _time.to24hours();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-        title: Text(widget.selectedType.toStr),
+        title: Text(AttendType.paidHoliday.toStr),
         content: FittedBox(
             child: DataTable(
                 headingRowColor: MaterialStateColor.resolveWith(
@@ -59,17 +63,17 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                 columns: const [
               DataColumn(label: Text('名前')),
               DataColumn(label: Text('日付')),
-              DataColumn(label: Text('時刻')),
+              DataColumn(label: Text('種類')),
             ],
                 rows: [
               DataRow(cells: [
                 DataCell(Text(widget.selectedName)),
                 //DataCell(Text(widget.selectedType.toStr)),
+                //DataCell(TextButton(
                 DataCell(
                   Text(_dateString, style: _textPickerStyle),
 
-                  /*TextButton(
-                  child: Text(_dateString, style: _textPickerStyle),
+                  /*
                   onPressed: () async {
                     final DateTime? picked = await showDatePicker(
                         context: context,
@@ -84,41 +88,28 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                       _dateString = _dateFormat.format(_date);
                     });
                   },
-                )
-                */
+                  */
                 ),
-                DataCell(TextButton(
-                    child: Text(_timeString, style: _textPickerStyle),
-                    onPressed: () async {
-                      final TimeOfDay? picked = await showTimePicker(
-                          context: context,
-                          initialTime: _time,
-                          initialEntryMode: TimePickerEntryMode.dial,
-                          builder: (context, child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(context)
-                                  .copyWith(alwaysUse24HourFormat: false),
-                              child: child!,
-                            );
-                          });
-                      if (picked == null) {
-                        return;
-                      }
-                      _time = picked;
-
-                      setState(() {
-                        _timeString = _time.to24hours();
-                      });
-                    })),
+                DataCell(DropdownButton<PaidHolidayType>(
+                  value: _selectedValue,
+                  items: list
+                      .map((PaidHolidayType item) =>
+                          DropdownMenuItem<PaidHolidayType>(
+                              value: item, child: Text(item.toStr)))
+                      .toList(),
+                  onChanged: (PaidHolidayType? value) {
+                    setState(() {
+                      _selectedValue = value!;
+                    });
+                  },
+                )),
               ])
             ])),
         actions: [
           ElevatedButton(
             child: const Text('決定'),
             onPressed: () {
-              DateTime dateTime = DateTime(
-                  _date.year, _date.month, _date.day, _time.hour, _time.minute);
-              Navigator.of(context).pop(dateTime);
+              Navigator.of(context).pop(_selectedValue);
             },
           ),
           ElevatedButton(

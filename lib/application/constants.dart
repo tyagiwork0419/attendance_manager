@@ -6,7 +6,7 @@ class Constants {
   static const String version = '0.0.31';
 
   static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbyogMSgxbmJvDEaaBrZiUNmYywS4WCkJlb4ad-fReKO8ojk2NC6WrsemLFkd8C5NqUi:run';
+      'https://script.googleapis.com/v1/scripts/AKfycbzBB5YH8gKCghNfnIylIe5uaxkr8ekYbCcQtpbxnQv-LJyCBOIfm8e-BuIhYc1L64D6:run';
 
   static const String tokenUrl = 'https://oauth2.googleapis.com/token';
 
@@ -37,9 +37,11 @@ class Constants {
   static const EdgeInsets allPadding = EdgeInsets.all(Constants.paddingMiddium);
   static const Duration wait100Milliseconds = Duration(milliseconds: 100);
 
+  static const Color yellow = Color.fromARGB(255, 243, 236, 143);
   static const Color green = Color.fromARGB(255, 210, 255, 212);
   static const Color red = Color.fromARGB(255, 255, 213, 227);
   static const Color gray = Color.fromARGB(255, 218, 218, 218);
+  static const Color brown = Color.fromARGB(255, 202, 150, 107);
 
   static TextStyle getVersionTextStyle(BuildContext context) {
     return TextStyle(

@@ -1,5 +1,7 @@
+import 'package:attendance_manager/ui/components/dialogs/paid_holiday_dialog.dart';
 import 'package:flutter/material.dart';
 
+import '../../application/constants.dart';
 import '../../models/attend_data.dart';
 import '../../services/attendance_service.dart';
 import '../pages/timecard_page.dart';
@@ -46,38 +48,64 @@ class _CommandButtonsState extends State<CommandButtons> {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle? buttonTextStyle = TextStyle(
+    TextStyle? buttonTextStyle1 = TextStyle(
+        color: Colors.black,
+        fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+    TextStyle? buttonTextStyle2 = TextStyle(
         color: Colors.white,
         fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
 
     double buttonHeight = 50;
-    double spaceMulti = 0.025;
-    double buttonWidthMulti = 0.3;
+    double buttonWidthMulti = 0.4;
+    double spaceMulti = 0.033;
 
     return LayoutBuilder(
         builder: (context, constraints) => Wrap(
                 runAlignment: WrapAlignment.center,
                 spacing: constraints.maxWidth * spaceMulti,
+                runSpacing: 10,
                 children: [
                   if (widget.clockIn)
                     SizedBox(
                         width: constraints.maxWidth * buttonWidthMulti,
                         height: buttonHeight,
                         child: ElevatedButton(
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color?>(
+                                        Constants.green)),
                             onPressed: _manualClockIn,
-                            child: Text('出勤', style: buttonTextStyle))),
+                            child: Text('出勤', style: buttonTextStyle1))),
                   if (widget.clockOut)
                     SizedBox(
                         width: constraints.maxWidth * buttonWidthMulti,
                         height: buttonHeight,
                         child: ElevatedButton(
                             onPressed: _manualClockOut,
-                            child: Text('退勤', style: buttonTextStyle))),
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color?>(
+                                        Constants.red)),
+                            child: Text('退勤', style: buttonTextStyle1))),
+                  SizedBox(
+                      width: constraints.maxWidth * buttonWidthMulti,
+                      height: buttonHeight,
+                      child: ElevatedButton(
+                          style: ButtonStyle(
+                              backgroundColor:
+                                  MaterialStateProperty.all<Color?>(
+                                      Constants.yellow)),
+                          onPressed: _setPaidHoliday,
+                          child: Text('有休', style: buttonTextStyle1))),
                   if (widget.timecard)
                     SizedBox(
                         width: constraints.maxWidth * buttonWidthMulti,
                         height: buttonHeight,
                         child: ElevatedButton(
+                            style: ButtonStyle(
+                                backgroundColor:
+                                    MaterialStateProperty.all<Color?>(
+                                        Constants.brown)),
                             onPressed: () {
                               Navigator.push(
                                   context,
@@ -87,7 +115,7 @@ class _CommandButtonsState extends State<CommandButtons> {
                                           name: widget.name,
                                           dateTime: widget.dateTime)));
                             },
-                            child: Text('タイムカード', style: buttonTextStyle))),
+                            child: Text('タイムカード', style: buttonTextStyle1))),
                 ]));
   }
 
@@ -121,7 +149,42 @@ class _CommandButtonsState extends State<CommandButtons> {
       AttendData data = AttendData(name, type, dateTime);
 
       List<AttendData> results =
-          await _attendanceService.setClock(sheetId, sheetName, data);
+          await _attendanceService.setAttendData(sheetId, sheetName, data);
+
+      widget.onGetResults!(results);
+    } catch (e) {
+      widget.onError!(e);
+    }
+  }
+
+  Future<void> _setPaidHoliday() async {
+    AttendType type = AttendType.paidHoliday;
+    PaidHolidayType? paidHolidayType = await showDialog<PaidHolidayType?>(
+        context: context,
+        builder: (_) {
+          return PaidHolidayDialog(
+            dateTime: widget.dateTime,
+            selectedName: widget.name,
+          );
+        });
+
+    if (paidHolidayType == null) {
+      return;
+    }
+
+    try {
+      widget.onPickDate!();
+
+      String sheetId = _attendanceService.getSheetId(widget.dateTime);
+      String sheetName = _attendanceService.getSheetName(widget.dateTime);
+      String name = widget.name;
+      DateTime dateTime = DateTime(
+          widget.dateTime.year, widget.dateTime.month, widget.dateTime.day);
+      AttendData data =
+          AttendData(name, type, dateTime, remarks: [paidHolidayType.toStr]);
+
+      List<AttendData> results =
+          await _attendanceService.setAttendData(sheetId, sheetName, data);
 
       widget.onGetResults!(results);
     } catch (e) {
