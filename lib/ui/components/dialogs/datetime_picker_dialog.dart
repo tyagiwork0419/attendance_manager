@@ -29,7 +29,7 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
   String _dateString = '';
   String _timeString = '';
   //final DateFormat _dateFormat = DateFormat('yyyy/MM/dd');
-  final DateFormat _dateFormat = DateFormat('MM/dd');
+  final DateFormat _dateFormat = DateFormat('MM/dd(E)', 'ja');
 
   final TextStyle _textPickerStyle = const TextStyle(fontSize: 20);
 

@@ -10,8 +10,6 @@ class TimecardData {
   late DateTime? clockInTime;
   late DateTime? clockOutTime;
 
-  bool isHoliday = false;
-
   late List<String> errors;
   late List<String> remarks;
 
@@ -59,6 +57,7 @@ class TimecardData {
       clockInTimeStr,
       clockOutTimeStr,
       elapsedTimeStr,
+      remarksStr,
     ];
 
     return csv;
