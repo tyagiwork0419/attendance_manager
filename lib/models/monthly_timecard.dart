@@ -10,12 +10,23 @@ class MonthlyTimecard {
   final String name;
   final DateTime date;
 
-  late Map<int, DailyTimecard> dailyTimecards;
+  final Map<int, DailyTimecard> dailyTimecards = {};
   //final Calendar calendar;
 
-  MonthlyTimecard(this.name, int year, int month)
-      : date = DateTime(year, month),
-        dailyTimecards = {};
+  MonthlyTimecard(this.name, int year, int month, Calendar calendar)
+      : date = DateTime(year, month) {
+    int lastDay = date.lastDayOfMonth;
+    for (int i = 1; i <= lastDay; ++i) {
+      List<CalendarEvent> events = [];
+      Date d = Date(year, month, i);
+      if (calendar.eventMap.containsKey(d)) {
+        List<CalendarEvent> evts = calendar.eventMap[d]!;
+        events.addAll(evts);
+      }
+
+      dailyTimecards[i] = DailyTimecard(name, year, month, i, events: events);
+    }
+  }
 
   double get sumOfElapsedTime {
     double sum = 0;
@@ -35,9 +46,8 @@ class MonthlyTimecard {
       List<AttendData> attendDataList, Calendar calendar) {
     List<TimecardData> dataList = TimecardData.create(attendDataList);
 
-    MonthlyTimecard monthlyTimecard = MonthlyTimecard(name, year, month);
-    initializeDailytimecard(monthlyTimecard);
-    setHoliday(monthlyTimecard, calendar);
+    MonthlyTimecard monthlyTimecard =
+        MonthlyTimecard(name, year, month, calendar);
 
     for (int i = 0; i < dataList.length; ++i) {
       TimecardData data = dataList[i];
@@ -51,35 +61,11 @@ class MonthlyTimecard {
       var dailyTimecard = monthlyTimecard.dailyTimecards[d];
 
       var list = dailyTimecard!.dataList;
-      bool isHoliday = !data.date!.isWeekday || dailyTimecard.events.isNotEmpty;
-      data.isHoliday = isHoliday;
 
       list.add(data);
     }
 
     return monthlyTimecard;
-  }
-
-  static void initializeDailytimecard(MonthlyTimecard monthlyTimecard) {
-    int lastDay = monthlyTimecard.date.lastDayOfMonth;
-    for (int i = 1; i <= lastDay; ++i) {
-      monthlyTimecard.dailyTimecards[i] = DailyTimecard(monthlyTimecard.name,
-          monthlyTimecard.date.year, monthlyTimecard.date.month, i);
-    }
-  }
-
-  static void setHoliday(MonthlyTimecard monthlyTimecard, Calendar calendar) {
-    int year = monthlyTimecard.date.year;
-    int month = monthlyTimecard.date.month;
-
-    monthlyTimecard.dailyTimecards.forEach((day, dailyTimecard) {
-      Date date = Date(year, month, day);
-      if (calendar.eventMap.containsKey(date)) {
-        List<CalendarEvent> events = calendar.eventMap[date]!;
-        dailyTimecard.events.addAll(events);
-        //debugPrint('name = {events[0].name}');
-      }
-    });
   }
 
   List<List<String>> toCsvFormat() {
@@ -97,7 +83,8 @@ class MonthlyTimecard {
       for (int i = 0; i < dataList.length; ++i) {
         TimecardData data = dataList[i];
         List<String> strs = data.toCsvFormat();
-        strs.add(dailyTimecard.remarksStr);
+        //strs.add(dailyTimecard.remarksStr);
+        strs.add(dailyTimecard.eventsStr);
         rows.add(strs);
       }
     });

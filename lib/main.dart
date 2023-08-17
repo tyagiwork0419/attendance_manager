@@ -42,16 +42,15 @@ class MyApp extends StatelessWidget {
           // is not restarted.
           primarySwatch: Colors.blue,
         ),
-        /*
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
+          //GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [
           Locale('ja'),
         ],
-        */
+        locale: const Locale('ja'),
         home: MyHomePage(title: '勤怠管理', attendanceService: attendanceService));
   }
 }
