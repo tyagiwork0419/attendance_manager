@@ -7,7 +7,7 @@ import 'calendar.dart';
 class DailyTimecard {
   final String name;
   final DateTime date;
-  final List<CalendarEvent> events = [];
+  final List<CalendarEvent> _events;
   //final List<String> remarks = [];
   final DateFormat _monthDayFormat = DateFormat('MM/dd(E)', 'ja');
   late List<TimecardData> dataList;
@@ -17,7 +17,7 @@ class DailyTimecard {
       return true;
     }
 
-    if (events.isNotEmpty) {
+    if (_events.isNotEmpty) {
       return true;
     }
 
@@ -60,10 +60,24 @@ class DailyTimecard {
     return dateStr;
   }
 
+  String get eventsStr {
+    String str = '';
+    if (_events.isNotEmpty) {
+      for (var event in _events) {
+        str += '${event.name}, ';
+      }
+    }
+    if (str.length >= 2) {
+      str = str.substring(0, str.length - 2);
+    }
+
+    return str;
+  }
+
   String get remarksStr {
     String str = '';
-    if (events.isNotEmpty) {
-      for (var event in events) {
+    if (_events.isNotEmpty) {
+      for (var event in _events) {
         str += '${event.name}, ';
       }
     }
@@ -75,8 +89,11 @@ class DailyTimecard {
       }
     }
 
-    if (hasPaidHoliday) {
-      str += '有休, ';
+    var rmks = remarks;
+    if (rmks.isNotEmpty) {
+      for (var remark in rmks) {
+        str += '$remark, ';
+      }
     }
 
     if (str.length >= 2) {
@@ -86,33 +103,18 @@ class DailyTimecard {
     return str;
   }
 
-  bool get hasPaidHoliday {
-    //List<String> remarks = [];
-    for (var data in dataList) {
-      //for (var remark in data.remarks) {
-      if (data.remarks.isNotEmpty) {
-        return true;
-        /*
-        if (!remarks.contains(remark)) {
-          remarks.add(remark);
-        }
-        */
-      }
-    }
-
-    return false;
-  }
-
-/*
   List<String> get remarks {
-    String str = '';
+    List<String> rmks = [];
     for (var data in dataList) {
-      if (data.remarks.isNotEmpty) {
-        str += data.remarksStr;
+      for (var remark in data.remarks) {
+        if (!rmks.contains(remark)) {
+          rmks.add(remark);
+        }
       }
     }
+
+    return rmks;
   }
-  */
 
   List<String> get errors {
     List<String> errs = [];
@@ -135,8 +137,10 @@ class DailyTimecard {
     return dataList.length > 1;
   }
 
-  DailyTimecard(this.name, int year, int month, int day)
-      : date = DateTime(year, month, day) {
+  DailyTimecard(this.name, int year, int month, int day,
+      {List<CalendarEvent>? events})
+      : date = DateTime(year, month, day),
+        _events = events ?? [] {
     dataList = [];
   }
 }
