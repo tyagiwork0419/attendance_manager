@@ -57,7 +57,7 @@ class _CommandButtonsState extends State<CommandButtons> {
 
     double buttonHeight = 50;
     double buttonWidthMulti = 0.4;
-    double spaceMulti = 0.033;
+    double spaceMulti = 0.066;
 
     return LayoutBuilder(
         builder: (context, constraints) => Wrap(

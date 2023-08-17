@@ -15,6 +15,8 @@ import '../components/dialogs/delete_dialog.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
 
+import 'package:linked_scroll_controller/linked_scroll_controller.dart';
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage(
       {super.key, required this.title, required this.attendanceService});
@@ -32,7 +34,10 @@ class _MyHomePageState extends State<MyHomePage> {
   //late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
-  final ScrollController _scrollController = ScrollController();
+  late LinkedScrollControllerGroup _verticalLinkedControllers;
+  late LinkedScrollControllerGroup _horizontalLinkedControllers;
+  late ScrollController _bodyController;
+  //final ScrollController _scrollController = ScrollController();
 
   late DateTime _clockDate;
   late DateTime _selectedDate;
@@ -48,6 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+
+    _horizontalLinkedControllers = LinkedScrollControllerGroup();
+    _verticalLinkedControllers = LinkedScrollControllerGroup();
+    _bodyController = _verticalLinkedControllers.addAndGet();
 
     _attendanceService = widget.attendanceService;
 
@@ -96,6 +105,11 @@ class _MyHomePageState extends State<MyHomePage> {
     List<ExpandableTableRow> rows = [];
     for (int i = 0; i < _dataList.length; ++i) {
       AttendData data = _dataList[i];
+      String typeStr = data.type.toStr;
+      if (data.type == AttendType.paidHoliday) {
+        typeStr = data.remarksToString(', ');
+      }
+
       Color color;
       TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
@@ -117,9 +131,8 @@ class _MyHomePageState extends State<MyHomePage> {
       ExpandableTableCell dateTime = DataTableView.buildCell(
           Text(data.shortDateTimeStr, style: style),
           color: color);
-      ExpandableTableCell type = DataTableView.buildCell(
-          Text(data.type.toStr, style: style),
-          color: color);
+      ExpandableTableCell type =
+          DataTableView.buildCell(Text(typeStr, style: style), color: color);
       ExpandableTableCell delete = DataTableView.buildCell(
           IconButton(
             icon: const Icon(Icons.delete),
@@ -207,8 +220,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _scrollToEnd() {
-    // _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-    //     duration: const Duration(milliseconds: 100), curve: Curves.ease);
+    //_verticalLinkedControllers.animateTo(
+    //_horizontalLinkedControllers.
+    /*
+    print('maxScrollExtent = ${_bodyController.position.maxScrollExtent}');
+    _horizontalLinkedControllers.animateTo(
+        _bodyController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.ease);
+        */
   }
 
   Future<void> _getByDateTime(DateTime dateTime) async {
@@ -278,6 +298,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: _selectedDate,
+        locale: const Locale(Constants.locale),
         firstDate: DateTime(_selectedDate.year - 1),
         lastDate: DateTime(_selectedDate.year + 1));
     if (picked == null) {
@@ -316,13 +337,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onPickDate() {
-    _isLoading = true;
+    setState(() {
+      _isLoading = true;
+    });
   }
 
   Future<void> _onGetResults(List<AttendData> results) async {
-    _isLoading = false;
-
     setState(() {
+      _isLoading = false;
       _updateDataRow(results);
     });
     await Future.delayed(Constants.wait100Milliseconds);
@@ -336,7 +358,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onError(Object error) {
-    _isLoading = false;
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Widget _nameButtons() {
@@ -388,7 +412,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     height: MediaQuery.of(context).size.height * 0.5,
                     child: LayoutBuilder(
                         builder: (context, constraints) => DataTableView(
-                            scrollController: _scrollController,
+                            //horizontalLinkedControllers:
+                            //    _horizontalLinkedControllers,
+                            //verticalLinkedControllers:
+                            //    _verticalLinkedControllers,
+                            //bodyController: _bodyController,
                             firstHeaderCell: _createFirstHeaderCell(),
                             headers: _createHeaders(),
                             rows: _createRows(),

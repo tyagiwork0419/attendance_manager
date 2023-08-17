@@ -41,8 +41,11 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   csv:
-  flutter_expandable_table:
   universal_html:
+  flutter_expandable_table:
+  #   path: ./plugins/flutter_expandable_table-2.0.0
+
+  # linked_scroll_controller: ^0.2.0
 
 
 

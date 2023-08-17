@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_table/flutter_expandable_table.dart';
 
+//import 'package:linked_scroll_controller/linked_scroll_controller.dart';
+
 class DataTableView extends StatefulWidget {
-  final ScrollController? scrollController;
+  //final ScrollController? scrollController;
+  //final LinkedScrollControllerGroup? _horizontalLinkedControllers;
+  //final ScrollController? _bodyController;
+  //final LinkedScrollControllerGroup? _verticalLinkedControllers;
   final ExpandableTableCell firstHeaderCell;
   final List<ExpandableTableHeader> headers;
   final List<ExpandableTableRow> rows;
@@ -12,9 +17,13 @@ class DataTableView extends StatefulWidget {
   final double firstColumnWidth;
   final double defaultsColumnWidth;
 
-  DataTableView(
+  const DataTableView(
       {super.key,
-      ScrollController? scrollController,
+      //ScrollController? scrollController,
+      //LinkedScrollControllerGroup? scrollController,
+      //LinkedScrollControllerGroup? horizontalLinkedControllers,
+      //LinkedScrollControllerGroup? verticalLinkedControllers,
+      //ScrollController? bodyController,
       required this.firstHeaderCell,
       required this.headers,
       required this.rows,
@@ -23,7 +32,13 @@ class DataTableView extends StatefulWidget {
       this.firstColumnWidth = 60,
       this.defaultsColumnWidth = 60,
       bool? isLoading})
-      : scrollController = scrollController ?? ScrollController(),
+      :
+        //: scrollController = scrollController ?? ScrollController(),
+        //: _verticalLinkedControllers =
+        //      verticalLinkedControllers ?? LinkedScrollControllerGroup(),
+        //  _horizontalLinkedControllers =
+        //      horizontalLinkedControllers ?? LinkedScrollControllerGroup(),
+        //  _bodyController = bodyController ?? ScrollController(),
         isLoading = isLoading ?? false;
 
   @override
@@ -75,14 +90,15 @@ class DataTableView extends StatefulWidget {
 }
 
 class _DataTableViewState extends State<DataTableView> {
-  final ScrollController scrollControllerX = ScrollController();
-
   late ExpandableTableController controller;
 
   @override
   void initState() {
     super.initState();
     controller = ExpandableTableController(
+      //horizontalLinkedControllers: widget._horizontalLinkedControllers,
+      //verticalLinkedControllers: widget._verticalLinkedControllers,
+      //bodyController: widget._bodyController,
       firstHeaderCell: widget.firstHeaderCell,
       headers: widget.headers,
       rows: [],
@@ -118,9 +134,18 @@ class _DataTableViewState extends State<DataTableView> {
   Widget build(BuildContext context) {
     return Stack(fit: StackFit.expand, alignment: Alignment.center, children: [
       Container(
-        decoration: BoxDecoration(border: Border.all()),
-        child: _buildExpandableTable(),
-      ),
+          decoration: BoxDecoration(border: Border.all()),
+          child: _buildExpandableTable()),
+      /*
+          child: SingleChildScrollView(
+              controller: scrollController,
+              child: SizedBox(
+                width: 600,
+                height: 2000,
+                child: _buildExpandableTable(),
+              ))),
+              */
+
       /*child: LayoutBuilder(
               builder: ((context, constraints) => Scrollbar(
                   thumbVisibility: true,
