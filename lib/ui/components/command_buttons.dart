@@ -51,9 +51,11 @@ class _CommandButtonsState extends State<CommandButtons> {
     TextStyle? buttonTextStyle1 = TextStyle(
         color: Colors.black,
         fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+    /*
     TextStyle? buttonTextStyle2 = TextStyle(
         color: Colors.white,
         fontSize: Theme.of(context).textTheme.bodyLarge?.fontSize);
+        */
 
     double buttonHeight = 50;
     double buttonWidthMulti = 0.4;

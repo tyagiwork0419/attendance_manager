@@ -2,14 +2,13 @@ import 'package:attendance_manager/services/attendance_service.dart';
 import 'package:attendance_manager/services/gas_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-//import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'application/constants.dart';
 import 'ui/pages/my_home_page.dart';
 
 void main() {
-  initializeDateFormatting('ja');
+  //initializeDateFormatting('ja');
 
   //runApp(const TestApp());
 
@@ -24,7 +23,7 @@ class MyApp extends StatelessWidget {
   final AttendanceService attendanceService;
 
   MyApp({super.key, required this.attendanceService}) {
-    attendanceService.getEvents();
+    //attendanceService.getEvents();
   }
 
   // This widget is the root of your application.
@@ -44,7 +43,7 @@ class MyApp extends StatelessWidget {
         ),
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
-          //GlobalWidgetsLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [

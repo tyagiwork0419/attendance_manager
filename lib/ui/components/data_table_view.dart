@@ -111,7 +111,7 @@ class _DataTableViewState extends State<DataTableView> {
   }
 
   Widget _loading() {
-    return const Stack(fit: StackFit.expand, children: [
+    return Stack(fit: StackFit.expand, children: const [
       ColoredBox(
         color: Colors.black26,
       ),

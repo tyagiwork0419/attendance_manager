@@ -15,7 +15,7 @@ import '../components/dialogs/delete_dialog.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
 
-import 'package:linked_scroll_controller/linked_scroll_controller.dart';
+//import 'package:linked_scroll_controller/linked_scroll_controller.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage(
@@ -34,9 +34,9 @@ class _MyHomePageState extends State<MyHomePage> {
   //late GasClient _gasClient;
   late AttendanceService _attendanceService;
 
-  late LinkedScrollControllerGroup _verticalLinkedControllers;
-  late LinkedScrollControllerGroup _horizontalLinkedControllers;
-  late ScrollController _bodyController;
+  //late LinkedScrollControllerGroup _verticalLinkedControllers;
+  //late LinkedScrollControllerGroup _horizontalLinkedControllers;
+  //late ScrollController _bodyController;
   //final ScrollController _scrollController = ScrollController();
 
   late DateTime _clockDate;
@@ -54,9 +54,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    _horizontalLinkedControllers = LinkedScrollControllerGroup();
-    _verticalLinkedControllers = LinkedScrollControllerGroup();
-    _bodyController = _verticalLinkedControllers.addAndGet();
+    //_horizontalLinkedControllers = LinkedScrollControllerGroup();
+    //_verticalLinkedControllers = LinkedScrollControllerGroup();
+    //_bodyController = _verticalLinkedControllers.addAndGet();
 
     _attendanceService = widget.attendanceService;
 
@@ -377,6 +377,7 @@ class _MyHomePageState extends State<MyHomePage> {
               selected: _choiceIndex == index,
               onSelected: (selected) {
                 _choiceIndex = index;
+                setState(() {});
               },
             );
           }))
