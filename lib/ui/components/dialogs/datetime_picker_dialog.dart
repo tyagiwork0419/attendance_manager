@@ -91,16 +91,17 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                     child: Text(_timeString, style: _textPickerStyle),
                     onPressed: () async {
                       final TimeOfDay? picked = await showTimePicker(
-                          context: context,
-                          initialTime: _time,
-                          initialEntryMode: TimePickerEntryMode.dial,
-                          builder: (context, child) {
+                        context: context,
+                        initialTime: _time,
+                        initialEntryMode: TimePickerEntryMode.dial,
+                        /*builder: (context, child) {
                             return MediaQuery(
                               data: MediaQuery.of(context)
                                   .copyWith(alwaysUse24HourFormat: false),
                               child: child!,
                             );
-                          });
+                          }*/
+                      );
                       if (picked == null) {
                         return;
                       }
