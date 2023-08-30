@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   final AttendanceService attendanceService;
 
   MyApp({super.key, required this.attendanceService}) {
-    //attendanceService.getEvents();
+    attendanceService.getEvents();
   }
 
   // This widget is the root of your application.
