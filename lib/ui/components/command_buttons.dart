@@ -6,6 +6,7 @@ import '../../models/attend_data.dart';
 import '../../services/attendance_service.dart';
 import '../pages/timecard_page.dart';
 import 'dialogs/datetime_picker_dialog.dart';
+import 'dialogs/login_dialog.dart';
 
 class CommandButtons extends StatefulWidget {
   final bool clockIn;
@@ -13,6 +14,7 @@ class CommandButtons extends StatefulWidget {
   final bool timecard;
   final AttendanceService attendanceService;
   final String name;
+  final String password;
   final DateTime dateTime;
   final VoidCallback? onPickDate;
   final void Function(List<AttendData> results)? onGetResults;
@@ -23,6 +25,7 @@ class CommandButtons extends StatefulWidget {
   const CommandButtons(
     this.attendanceService,
     this.name,
+    this.password,
     this.dateTime, {
     super.key,
     this.clockIn = true,
@@ -109,13 +112,8 @@ class _CommandButtonsState extends State<CommandButtons> {
                                     MaterialStateProperty.all<Color?>(
                                         Constants.brown)),
                             onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => TimecardPage(
-                                          service: _attendanceService,
-                                          name: widget.name,
-                                          dateTime: widget.dateTime)));
+                              _login();
+                              //_transitionToTimecardPage();
                             },
                             child: Text('タイムカード', style: buttonTextStyle1))),
                 ]));
@@ -157,6 +155,38 @@ class _CommandButtonsState extends State<CommandButtons> {
     } catch (e) {
       widget.onError!(e);
     }
+  }
+
+  Future<void> _login() async {
+    bool? result = await showDialog<bool?>(
+        context: context,
+        builder: (_) {
+          return LoginDialog(
+            selectedName: widget.name,
+            selectedPassword: widget.password,
+          );
+        });
+
+    if (result == null) {
+      return;
+    }
+    try {
+      if (result) {
+        _transitionToTimecardPage();
+      }
+    } catch (e) {
+      widget.onError!(e);
+    }
+  }
+
+  void _transitionToTimecardPage() async {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => TimecardPage(
+                service: _attendanceService,
+                name: widget.name,
+                dateTime: widget.dateTime)));
   }
 
   Future<void> _setPaidHoliday() async {
