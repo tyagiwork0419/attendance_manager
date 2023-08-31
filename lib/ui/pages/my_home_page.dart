@@ -47,7 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int _choiceIndex = 0;
   String get _chooseName {
-    return Constants.nameList[_choiceIndex];
+    return Constants.userList[_choiceIndex].name;
   }
 
   @override
@@ -370,9 +370,10 @@ class _MyHomePageState extends State<MyHomePage> {
           spacing: 10,
           children:
               // _choiceChipList)]),
-              List<ChoiceChip>.generate(Constants.nameList.length, (int index) {
+              List<ChoiceChip>.generate(Constants.userList.length, (int index) {
             return ChoiceChip(
-              label: Text(Constants.nameList[index], style: choiceTextStyle),
+              label:
+                  Text(Constants.userList[index].name, style: choiceTextStyle),
               selectedColor: Colors.yellow,
               selected: _choiceIndex == index,
               onSelected: (selected) {
@@ -429,7 +430,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             defaultsRowHeight: 60,
                             isLoading: _isLoading)))),
             //_buttons(),
-            CommandButtons(_attendanceService, _chooseName, dateTime,
+            CommandButtons(_attendanceService, _chooseName,
+                Constants.userList[_choiceIndex].password, dateTime,
                 onPickDate: _onPickDate,
                 onGetResults: _onGetResults,
                 onError: _onError),
