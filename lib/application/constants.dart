@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../models/user.dart';
+
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.35';
+  static const String version = '0.0.36';
 
   static const String apiUrl =
       'https://script.googleapis.com/v1/scripts/AKfycbzBB5YH8gKCghNfnIylIe5uaxkr8ekYbCcQtpbxnQv-LJyCBOIfm8e-BuIhYc1L64D6:run';
@@ -19,14 +21,13 @@ class Constants {
   //'https://www.googleapis.com/auth/spreadsheets';
   //'https://www.googleapis.com/auth/drive';
 
-  static final List<String> nameList = <String>[
-    //'test',
-    '八木',
-    '大滝',
-    '山本',
-    '広瀬',
-    '坂下',
-    '西本'
+  static final List<User> userList = <User>[
+    User(name: '八木', password: 'tyagi'),
+    User(name: '大滝', password: 'kotaki'),
+    User(name: '山本', password: 'kyamamoto'),
+    User(name: '広瀬', password: 'yhirose'),
+    User(name: '坂下', password: 'msakasita'),
+    User(name: '西本', password: 'mnisimoto'),
   ];
 
   static const double paddingMiddium = 10;
