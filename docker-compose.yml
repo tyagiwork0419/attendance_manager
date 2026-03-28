@@ -1,0 +1,10 @@
+services:
+  flutter-dev:
+    build:
+      context: .
+      target: builder     # ビルドステージで止める
+    volumes:
+      - ./app:/app        # ソース変更をリアルタイム反映
+    ports:
+      - "8080:8080"
+    command: flutter run -d web-server --web-port 8080
