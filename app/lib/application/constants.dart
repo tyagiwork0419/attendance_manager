@@ -28,6 +28,7 @@ class Constants {
     User(name: '広瀬', password: 'yhirose'),
     User(name: '坂下', password: 'msakasita'),
     User(name: '西本', password: 'mnisimoto'),
+    User(name: '関屋', password: 'sekiya'),
   ];
 
   static const double paddingMiddium = 10;
