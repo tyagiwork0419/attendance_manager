@@ -1,10 +1,11 @@
 services:
   flutter-dev:
-    build:
-      context: .
-      target: builder     # ビルドステージで止める
+    image: ghcr.io/cirruslabs/flutter:3.7.10
     volumes:
-      - ./app:/app        # ソース変更をリアルタイム反映
+      - ./app:/app
+    working_dir: /app
     ports:
       - "8080:8080"
-    command: flutter run -d web-server --web-port 8080
+    command: >
+      sh -c "flutter pub get &&
+             flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
