@@ -22,16 +22,26 @@ migrate_working_dir/
 #.vscode/
 
 # Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
-pubspeck.lock
+app/**/doc/api/
+app/**/ios/Flutter/.last_build_id
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+# Flutter/Dart
+app/build/
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+
+# 依存パッケージ（pubspec.lockは含めてOK）
+# app/pubspec.lock はコミットしてよい
+
+# macOS
+.DS_Store.app/.pub/
+app/build/
+app/pubspeck.lock
 
 # Symbolication related
 app.*.symbols
@@ -40,8 +50,21 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+app/android/app/debug
+app/android/app/profile
+app/android/app/release
 
 /plugins/
+
+# Flutter/Dart
+app/build/
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.packages
+
+# 依存パッケージ（pubspec.lockは含めてOK）
+# app/pubspec.lock はコミットしてよい
+
+# macOS
+.DS_Store
