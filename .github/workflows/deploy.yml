@@ -32,9 +32,6 @@ jobs:
           mkdir -p ./output
           docker cp tmp-container:/usr/share/nginx/html/. ./output/
           docker rm tmp-container
-            --target builder \
-            --output type=local,dest=./output \
-            -f Dockerfile .
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
