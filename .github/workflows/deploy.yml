@@ -24,6 +24,14 @@ jobs:
       - name: Build Flutter web (Docker)
         run: |
           docker build \
+            --build-arg BASE_HREF="/${{ github.event.repository.name }}/" \
+            -t my-app .
+          
+          # コンテナからビルド成果物だけ取り出す
+          docker create --name tmp-container my-app
+          mkdir -p ./output
+          docker cp tmp-container:/usr/share/nginx/html/. ./output/
+          docker rm tmp-container
             --target builder \
             --output type=local,dest=./output \
             -f Dockerfile .
@@ -31,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./output/build/web
+          path: ./output
 
   deploy:
     needs: build
