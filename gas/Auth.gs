@@ -22,9 +22,6 @@
 /** セッションの有効期間(秒)。CacheService の上限は 21600 秒 (6時間)。 */
 var TOKEN_TTL_SECONDS = 21600;
 
-/** パスワードハッシュの反復回数。増やすほど総当たりに強いがログインが遅くなる。 */
-var HASH_ITERATIONS = 10000;
-
 /** 認証不要。ログイン画面を出すために必要。 */
 var PUBLIC_ACTIONS = ['getUsers', 'login'];
 
@@ -129,13 +126,12 @@ function handleLogin_(req) {
 
   var record = loadUserRecord_(name);
 
-  // ユーザーが存在しない場合もハッシュ計算を行い、応答時間の差で
+  // 存在しないユーザーでも同じ比較経路を通し、応答の差で
   // ユーザーの存在有無が判別できないようにする。
-  var salt = record ? record.salt : 'dummy-salt-for-timing';
-  var iterations = record ? record.iterations : HASH_ITERATIONS;
-  var computed = hashPassword_(password, salt, iterations);
+  var expected = record ? record.password : '';
+  var matched = timingSafeEqual_(String(password), expected);
 
-  if (!record || !timingSafeEqual_(computed, record.hash)) {
+  if (!record || !matched) {
     return fail_('名前またはパスワードが違います', 'invalid_credentials');
   }
 
@@ -173,123 +169,92 @@ function sessionKey_(token) {
 }
 
 // ---------------------------------------------------------------------------
-// ユーザー管理 (スクリプトプロパティに保存)
+// ユーザー管理 (スプレッドシートの users シート)
 // ---------------------------------------------------------------------------
 //
-// 保存形式:
-//   USER_INDEX      -> ["八木","大滝", ...]                 表示用の名前一覧
-//   USER_<名前>     -> {"salt":"..","hash":"..","iterations":10000}
+// シート構成:
+//   id | name | password
 //
-// スクリプトプロパティはサーバー側ストレージであり、クライアントには渡らない。
+// ユーザーの追加・変更はスプレッドシートを直接編集する。
+// 列は見出し行の名前で解決するため、列順が変わっても動作する。
+//
+// このシートはサーバー側でのみ読まれ、クライアントには名前しか渡らない。
 
-var USER_INDEX_KEY = 'USER_INDEX';
+/** ユーザー情報を保持するスプレッドシート。 */
+var USERS_SPREADSHEET_ID = '1P3nX1XmpVqBLCB-BVgOGWG_U6a6vSr58YXeesvDvs68';
+var USERS_SHEET_NAME = 'users';
 
-function userKey_(name) {
-  return 'USER_' + name;
+var COLUMN_NAME = 'name';
+var COLUMN_PASSWORD = 'password';
+
+/**
+ * users シートを読み、[{name, password}] を返す。
+ *
+ * パスワードが数値のみの場合 Sheets は number として返すため、
+ * 比較前に必ず文字列化する。なお number 化により先頭の 0 は失われる
+ * （"0123" は 123 になる）点に注意。
+ */
+function loadUsers_() {
+  var book = SpreadsheetApp.openById(USERS_SPREADSHEET_ID);
+  var sheet = book.getSheetByName(USERS_SHEET_NAME);
+  if (!sheet) {
+    throw new Error(USERS_SHEET_NAME + ' シートが見つかりません');
+  }
+
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return [];
+  }
+
+  var header = values[0].map(function (h) {
+    return String(h).trim().toLowerCase();
+  });
+  var nameIndex = header.indexOf(COLUMN_NAME);
+  var passwordIndex = header.indexOf(COLUMN_PASSWORD);
+
+  if (nameIndex < 0 || passwordIndex < 0) {
+    throw new Error(
+      USERS_SHEET_NAME + ' シートに ' + COLUMN_NAME + ' / ' + COLUMN_PASSWORD + ' 列が必要です'
+    );
+  }
+
+  var users = [];
+  for (var i = 1; i < values.length; i++) {
+    var name = String(values[i][nameIndex]).trim();
+    if (!name) {
+      continue;
+    }
+    users.push({
+      name: name,
+      password: String(values[i][passwordIndex]).trim()
+    });
+  }
+  return users;
 }
 
-/** ログイン画面に出す名前の一覧。パスワード情報は一切返さない。 */
+/** ログイン画面に出す名前の一覧。パスワードは一切返さない。 */
 function listUserNames_() {
-  var raw = PropertiesService.getScriptProperties().getProperty(USER_INDEX_KEY);
-  if (!raw) {
-    return [];
-  }
-  try {
-    return JSON.parse(raw);
-  } catch (err) {
-    return [];
-  }
+  return loadUsers_().map(function (u) {
+    return u.name;
+  });
 }
 
 function loadUserRecord_(name) {
-  var raw = PropertiesService.getScriptProperties().getProperty(userKey_(name));
-  if (!raw) {
-    return null;
-  }
-  try {
-    var record = JSON.parse(raw);
-    if (!record.salt || !record.hash) {
-      return null;
+  var users = loadUsers_();
+  for (var i = 0; i < users.length; i++) {
+    if (users[i].name === name) {
+      return users[i];
     }
-    record.iterations = record.iterations || HASH_ITERATIONS;
-    return record;
-  } catch (err) {
-    return null;
   }
-}
-
-/**
- * ユーザーを登録・更新する。スクリプトエディタから手動で実行する用。
- * 使い方は gas/README.md を参照。
- */
-function upsertUser(name, password) {
-  if (!name || !password) {
-    throw new Error('name と password は必須です');
-  }
-
-  var salt = Utilities.getUuid();
-  var record = {
-    salt: salt,
-    hash: hashPassword_(password, salt, HASH_ITERATIONS),
-    iterations: HASH_ITERATIONS
-  };
-
-  var props = PropertiesService.getScriptProperties();
-  props.setProperty(userKey_(name), JSON.stringify(record));
-
-  var names = listUserNames_();
-  if (names.indexOf(name) < 0) {
-    names.push(name);
-    props.setProperty(USER_INDEX_KEY, JSON.stringify(names));
-  }
-
-  console.log('登録しました: ' + name);
-}
-
-/** ユーザーを削除する。スクリプトエディタから手動で実行する用。 */
-function deleteUser(name) {
-  var props = PropertiesService.getScriptProperties();
-  props.deleteProperty(userKey_(name));
-
-  var names = listUserNames_().filter(function (n) {
-    return n !== name;
-  });
-  props.setProperty(USER_INDEX_KEY, JSON.stringify(names));
-
-  console.log('削除しました: ' + name);
+  return null;
 }
 
 // ---------------------------------------------------------------------------
-// パスワードハッシュ
+// パスワード照合
 // ---------------------------------------------------------------------------
 //
-// GAS には bcrypt / scrypt / PBKDF2 が無いため、ソルト付き SHA-256 の
-// 反復で代替している。専用のパスワードハッシュ関数より弱いことは事実だが、
-// 平文保存や無反復ハッシュよりは総当たり耐性が大きく向上する。
-// 反復回数は HASH_ITERATIONS で調整できる。
-
-function hashPassword_(password, salt, iterations) {
-  var digest = salt + ':' + password;
-  for (var i = 0; i < iterations; i++) {
-    var bytes = Utilities.computeDigest(
-      Utilities.DigestAlgorithm.SHA_256,
-      digest,
-      Utilities.Charset.UTF_8
-    );
-    digest = bytesToHex_(bytes);
-  }
-  return digest;
-}
-
-function bytesToHex_(bytes) {
-  var hex = '';
-  for (var i = 0; i < bytes.length; i++) {
-    // GAS の computeDigest は符号付きバイトを返すため 0-255 に戻す。
-    var b = (bytes[i] + 256) % 256;
-    hex += (b < 16 ? '0' : '') + b.toString(16);
-  }
-  return hex;
-}
+// シートには平文で保存されているため、そのまま比較する。
+// シートはサーバー側でのみ読まれ、クライアントには渡らない。
 
 /** 文字単位の差分を全て走査し、一致位置による処理時間の差を作らない。 */
 function timingSafeEqual_(a, b) {

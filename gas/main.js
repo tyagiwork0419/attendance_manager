@@ -1,8 +1,22 @@
-const controller = new SpreadSheetAPIController();
-const calendarController = new CalendarAPIController();
+// Apps Script は全ファイルを1つのグローバルスコープに連結して評価するため、
+// トップレベルで他ファイルのクラスを new すると評価順に依存する。
+// GAS はファイルをアルファベット順で保持しており main は
+// SpreadSheetAPIController より前に来るので、トップレベルで new すると
+// ReferenceError になる。clasp の filePushOrder でも制御できない。
+// 呼び出し時に初期化することで、評価順に依存しないようにしている。
+var controller = null;
+var calendarController = null;
+
+function initControllers_() {
+  if (controller === null) {
+    controller = new SpreadSheetAPIController();
+    calendarController = new CalendarAPIController();
+  }
+}
 
 function doGet(e) {
   try{
+    initControllers_();
     let result = controller.handleGet(e);
     //return Response(result);
     return JSON.stringify(result);
@@ -24,6 +38,7 @@ function doGet(e) {
 // （この関数は戻り値が無く、Web アプリの応答としては機能しない。
 //   旧クライアントは doPost ではなく scripts.run API を使っていた。）
 function legacyDoPost_(e) {
+  initControllers_();
   controller.handlePost(e);
 }
 
@@ -31,27 +46,32 @@ function legacyDoPost_(e) {
 
 function selectByDate(e){
   console.log(e);
+  initControllers_();
   result = controller.selectByDate(e);
   return result;
 }
 
 function selectByName(e){
   console.log(e);
+  initControllers_();
   result = controller.selectByName(e);
   return result;
 }
 
 function insertRows(e){
+  initControllers_();
   result = controller.insertRows(e);
   return result;
 }
 
 function updateById(e){
+  initControllers_();
   result = controller.updateById(e);
   return result;
 }
 
 function getEvents(e){
+  initControllers_();
   result = calendarController.getEvents();
   return result;
 }
