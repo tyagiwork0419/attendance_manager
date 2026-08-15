@@ -317,6 +317,21 @@ docker compose run --rm clasp deploy -i <デプロイID> -d "説明"
 [constants.dart](../app/lib/application/constants.dart) の `webAppUrl` を
 変えたくない場合は、必ず既存デプロイの更新を選ぶ。
 
+> **`clasp deploy -i` はアクセス設定を変更しない。**
+> 更新されるのはバージョンだけで、「アクセスできるユーザー」はデプロイ作成時の
+> 設定が保持される。`appsscript.json` に `"access": "ANYONE_ANONYMOUS"` があっても、
+> 既存デプロイには反映されない。
+>
+> アクセス設定が「全員」以外のままだと、`/exec` への POST は
+> Google Drive の「アクセスが拒否されました」ページと共に **403** を返す。
+> 変更はエディタの **デプロイを管理 → 鉛筆アイコン → アクセスできるユーザー**
+> から行う（この項目は API / clasp からは変更できない）。
+
+> **デプロイ数の上限は 20。**
+> 超えると `clasp deploy` が
+> `Scripts may only have up to 20 versioned deployments at a time.` で失敗する。
+> 不要なものは `clasp undeploy <デプロイID>` で削除する。
+
 ## 5. CORS についての注意
 
 クライアントは `Content-Type: text/plain` で JSON を POST する。
