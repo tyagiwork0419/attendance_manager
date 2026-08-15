@@ -73,8 +73,9 @@ class SpreadSheetAPIController {
 
     let dataList = [];
 
-    let rows = db.SELECT(AttendData.getPropertyNames()).getVal();
-    //let rows = db.select(AttendData.getPropertyNames()).result();
+    // _initDB が返すのは SpreadSheetsSQL のインスタンス。
+    // 旧 gSQL の API (SELECT / getVal) は持たないため _selectByName と同じ呼び方に揃える。
+    let rows = db.select(AttendData.getPropertyNames()).result();
 
     rows.forEach(function (row) {
       //console.log(row);
@@ -226,9 +227,13 @@ class SpreadSheetAPIController {
       let dataList = this._selectByDate(db, dateTime);
 
       return this._makeResponse(dataList);
-      
-    } catch (e) {
-      return JSON.stringify(e);
+
+    } catch (error) {
+      // 握り潰さず Auth.gs の doPost まで送出する。
+      // JSON.stringify(Error) は "{}" になり、原因が失われたうえ
+      // HTTP 200 の正常応答として返ってしまうため。
+      console.error('selectByDate error: ' + error);
+      throw error;
     }
   }
 
@@ -240,9 +245,12 @@ class SpreadSheetAPIController {
 
       let dataList = this._selectByName(db, name);
       return this._makeResponse(dataList);
-    } catch (e) {
-      console.log('error: ' + e);
-      return JSON.stringify(e);
+    } catch (error) {
+      // 握り潰さず Auth.gs の doPost まで送出する。
+      // JSON.stringify(Error) は "{}" になり、原因が失われたうえ
+      // HTTP 200 の正常応答として返ってしまうため。
+      console.error('error: ' + error);
+      throw error;
     }
 
   }
@@ -265,9 +273,12 @@ class SpreadSheetAPIController {
       let dataList = this._selectByDate(db, newData.dateTime);
 
       return this._makeResponse(dataList);
-    } catch (e) {
-      console.log('error: ' + e);
-      return JSON.stringify(e);
+    } catch (error) {
+      // 握り潰さず Auth.gs の doPost まで送出する。
+      // JSON.stringify(Error) は "{}" になり、原因が失われたうえ
+      // HTTP 200 の正常応答として返ってしまうため。
+      console.error('error: ' + error);
+      throw error;
     }
   }
 
@@ -285,9 +296,12 @@ class SpreadSheetAPIController {
       let dataList = this._selectByDate(db, dateTime);
 
       return this._makeResponse(dataList);
-    } catch (e) {
-      console.log('error: ' + e);
-      return JSON.stringify(e);
+    } catch (error) {
+      // 握り潰さず Auth.gs の doPost まで送出する。
+      // JSON.stringify(Error) は "{}" になり、原因が失われたうえ
+      // HTTP 200 の正常応答として返ってしまうため。
+      console.error('error: ' + error);
+      throw error;
     }
   }
 }
