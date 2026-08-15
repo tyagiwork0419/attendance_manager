@@ -9,3 +9,23 @@ services:
     command: >
       sh -c "flutter pub get &&
              flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0"
+
+  # Apps Script のローカル編集・デプロイ用。
+  # profiles 指定により docker compose up では起動しない。
+  #   docker compose run --rm clasp <サブコマンド>
+  clasp:
+    build:
+      context: ./gas
+    volumes:
+      - ./gas:/gas
+      # 認証情報 (~/.clasprc.json) をリポジトリ外の volume に隔離する。
+      - clasp-auth:/claspauth
+    working_dir: /gas
+    ports:
+      # clasp login の OAuth リダイレクト受け口。
+      # docker compose run は --service-ports を付けないと publish しない。
+      - "3001:3001"
+    profiles: ["tools"]
+
+volumes:
+  clasp-auth:

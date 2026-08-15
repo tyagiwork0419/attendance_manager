@@ -1,3 +1,9 @@
+# clasp (Apps Script)
+# 認証情報。通常は Docker volume 側に隔離されるが、念のため二重に防ぐ。
+.clasprc.json
+gas/.clasprc.json
+gas/node_modules/
+
 # Miscellaneous
 *.class
 *.log

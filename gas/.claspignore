@@ -1,0 +1,9 @@
+# GAS へ push しないファイル。
+# clasp が対象とするのは .gs / .js / .html / appsscript.json のみだが、
+# 事故を防ぐため明示的に除外しておく。
+
+README.md
+Dockerfile
+.claspignore
+.clasp.json
+node_modules/**
