@@ -17,7 +17,13 @@ function doGet(e) {
   }
 }
 
-function doPost(e) {
+// Web アプリのエントリポイントは Auth.gs の doPost に一本化した。
+// Apps Script は全ファイルが単一のグローバルスコープを共有するため、
+// doPost が複数あると後から読み込まれた定義が勝ち、どちらが有効になるかが
+// ファイルの並び順に依存してしまう。衝突を避けるため改名してある。
+// （この関数は戻り値が無く、Web アプリの応答としては機能しない。
+//   旧クライアントは doPost ではなく scripts.run API を使っていた。）
+function legacyDoPost_(e) {
   controller.handlePost(e);
 }
 
