@@ -1,3 +1,21 @@
 .git
 .github
 output/
+
+# IDE
+.vs
+.vscode
+
+# Flutter のビルド成果物・ツールキャッシュ
+# ローカルで build を実行すると .plugin_symlinks に解決不能なシンボリックリンクが
+# 生成され、build context の読み込み自体が失敗するため必ず除外する。
+app/build/
+app/.dart_tool/
+**/ephemeral/
+
+# Web ビルドでは使用しないネイティブプラットフォーム
+app/android/
+app/ios/
+app/linux/
+app/macos/
+app/windows/
