@@ -45,9 +45,15 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<AttendData> _dataList = [];
   late bool _isLoading;
 
+  /// 名前一覧は GAS 側から取得する。クライアントには保持しない。
+  List<String> _userNames = [];
+
   int _choiceIndex = 0;
   String get _chooseName {
-    return Constants.userList[_choiceIndex].name;
+    if (_choiceIndex >= _userNames.length) {
+      return '';
+    }
+    return _userNames[_choiceIndex];
   }
 
   @override
@@ -75,7 +81,28 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     });
 
+    _loadUserNames();
     _getByDateTime(now);
+  }
+
+  Future<void> _loadUserNames() async {
+    try {
+      final List<String> names = await _attendanceService.getUserNames();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _userNames = names;
+        if (_choiceIndex >= _userNames.length) {
+          _choiceIndex = 0;
+        }
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ErrorDialog.showErrorDialog(context, e);
+    }
   }
 
   ExpandableTableCell _createFirstHeaderCell() {
@@ -370,10 +397,9 @@ class _MyHomePageState extends State<MyHomePage> {
           spacing: 10,
           children:
               // _choiceChipList)]),
-              List<ChoiceChip>.generate(Constants.userList.length, (int index) {
+              List<ChoiceChip>.generate(_userNames.length, (int index) {
             return ChoiceChip(
-              label:
-                  Text(Constants.userList[index].name, style: choiceTextStyle),
+              label: Text(_userNames[index], style: choiceTextStyle),
               selectedColor: Colors.yellow,
               selected: _choiceIndex == index,
               onSelected: (selected) {
@@ -430,11 +456,12 @@ class _MyHomePageState extends State<MyHomePage> {
                             defaultsRowHeight: 60,
                             isLoading: _isLoading)))),
             //_buttons(),
-            CommandButtons(_attendanceService, _chooseName,
-                Constants.userList[_choiceIndex].password, dateTime,
-                onPickDate: _onPickDate,
-                onGetResults: _onGetResults,
-                onError: _onError),
+            // 名前一覧の取得前は打刻対象が確定しないため操作ボタンを出さない。
+            if (_userNames.isNotEmpty)
+              CommandButtons(_attendanceService, _chooseName, dateTime,
+                  onPickDate: _onPickDate,
+                  onGetResults: _onGetResults,
+                  onError: _onError),
             Padding(padding: Constants.allPadding, child: _nameButtons())
           ])),
         )));

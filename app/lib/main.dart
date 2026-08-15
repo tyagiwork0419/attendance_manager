@@ -12,8 +12,7 @@ void main() {
 
   //runApp(const TestApp());
 
-  GasClient gasClient = GasClient(Constants.clientId, Constants.clientSecret,
-      Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
+  GasClient gasClient = GasClient(Constants.webAppUrl);
   AttendanceService attendanceService = AttendanceService(gasClient);
 
   runApp(MyApp(attendanceService: attendanceService));

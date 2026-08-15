@@ -1,35 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../models/user.dart';
-
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.36';
+  static const String version = '0.0.37';
 
-  static const String apiUrl =
-      'https://script.googleapis.com/v1/scripts/AKfycbzBB5YH8gKCghNfnIylIe5uaxkr8ekYbCcQtpbxnQv-LJyCBOIfm8e-BuIhYc1L64D6:run';
-
-  static const String tokenUrl = 'https://oauth2.googleapis.com/token';
-
-  static const String clientId =
-      '899530760082-skgo3k4sjv5la566sa598icfgdsusmgt.apps.googleusercontent.com';
-  static const String clientSecret = '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';
-  static const String refreshToken =
-      '1//049NpcRbl9qEiCgYIARAAGAQSNwF-L9IrPOneYPhX5iL4BqAbJjlunaJM5BLO4AoxnPmAGOJy10tqMzmgfnpK55MwNxVoQEIQd0M';
-  //final String scope =
-  //'https://www.googleapis.com/auth/spreadsheets';
-  //'https://www.googleapis.com/auth/drive';
-
-  static final List<User> userList = <User>[
-    User(name: '八木', password: 'tyagi'),
-    User(name: '大滝', password: 'kotaki'),
-    User(name: '山本', password: 'kyamamoto'),
-    User(name: '広瀬', password: 'yhirose'),
-    User(name: '坂下', password: 'msakasita'),
-    User(name: '西本', password: 'mnisimoto'),
-    User(name: '関屋', password: 'sekiya'),
-  ];
+  /// GAS Web アプリのエンドポイント。
+  ///
+  /// Web ビルドの成果物はすべてブラウザに配信されるため、ここには秘密情報を
+  /// 置けない。認証情報は GAS 側（所有者権限で実行）が保持し、クライアントは
+  /// ログインで得たセッショントークンのみを扱う。
+  /// デプロイ手順は gas/README.md を参照。
+  static const String webAppUrl = String.fromEnvironment(
+    'GAS_WEB_APP_URL',
+    defaultValue: 'https://script.google.com/macros/s/AKfycbzy4_kA6lUQNC2lGSVi8eCNp1kDx4Tpwpg6kSUVvLY6pB68pYAxaT45exapgXdAiTW6/exec',
+  );
 
   static const double paddingMiddium = 10;
   static const String locale = 'ja';

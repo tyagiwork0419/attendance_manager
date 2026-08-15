@@ -15,8 +15,7 @@ void main() {
   const String testName = 'test';
 
   setUp(() {
-    gasClient = GasClient(Constants.clientId, Constants.clientSecret,
-        Constants.refreshToken, Constants.tokenUrl, Constants.apiUrl);
+    gasClient = GasClient(Constants.webAppUrl);
 
     service = AttendanceService(gasClient);
   });
