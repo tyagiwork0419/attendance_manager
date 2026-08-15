@@ -17,6 +17,22 @@ class AttendanceService {
 
   AttendanceService(this._gasClient);
 
+  bool get isAuthenticated => _gasClient.isAuthenticated;
+
+  /// ログイン画面に表示する名前の一覧。GAS 側から取得する。
+  Future<List<String>> getUserNames() {
+    return _gasClient.getUserNames();
+  }
+
+  /// パスワード照合は GAS 側で行う。違う場合は false を返す。
+  Future<bool> login(String name, String password) {
+    return _gasClient.login(name, password);
+  }
+
+  void logout() {
+    _gasClient.clearSession();
+  }
+
   String getSheetId(DateTime dateTime) {
     return '${dateTime.year}年';
   }

@@ -14,7 +14,6 @@ class CommandButtons extends StatefulWidget {
   final bool timecard;
   final AttendanceService attendanceService;
   final String name;
-  final String password;
   final DateTime dateTime;
   final VoidCallback? onPickDate;
   final void Function(List<AttendData> results)? onGetResults;
@@ -25,7 +24,6 @@ class CommandButtons extends StatefulWidget {
   const CommandButtons(
     this.attendanceService,
     this.name,
-    this.password,
     this.dateTime, {
     super.key,
     this.clockIn = true,
@@ -163,7 +161,7 @@ class _CommandButtonsState extends State<CommandButtons> {
         builder: (_) {
           return LoginDialog(
             selectedName: widget.name,
-            selectedPassword: widget.password,
+            attendanceService: _attendanceService,
           );
         });
 
