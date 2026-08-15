@@ -1,3 +1,8 @@
+// 取得する年の範囲。現在の年を基準に前後何年ぶんを見るか。
+// アプリの日付ピッカーが「今年 ±1年」を選べる（my_home_page.dart）ので、それに合わせている。
+const CALENDAR_YEARS_BACK = 1;
+const CALENDAR_YEARS_FORWARD = 1;
+
 class CalendarAPIController{
   constructor(useMock = false){
     this._useMock = useMock;
@@ -16,6 +21,15 @@ class CalendarAPIController{
 
     for(let i=0; i<ids.length; ++i){
       let calendar = CalendarApp.getCalendarById(ids[i]);
+
+      // 共有が外れている等でアクセスできないと null が返る。
+      // そのまま使うと getEvents() で例外になり、他のカレンダーごと
+      // 取得が失敗してしまうため、警告を残して読み飛ばす。
+      if(calendar === null){
+        console.warn('カレンダーにアクセスできないため読み飛ばします: ' + ids[i]);
+        continue;
+      }
+
       calendars.push(calendar);
     }
 
@@ -26,11 +40,15 @@ class CalendarAPIController{
     console.log('getEvents');
     let calendars = this._getCalendars();
     let events = []
-    
+
+    // 現在の年を基準にした範囲。以前は 2023 年で固定されており、
+    // 年が変わると祝日が一切返らなくなっていた。
+    let currentYear = new Date().getFullYear();
+    let startDate = new Date(currentYear - CALENDAR_YEARS_BACK, 0, 1);
+    let endDate = new Date(currentYear + CALENDAR_YEARS_FORWARD + 1, 0, 1);
+
     for(let i=0; i<calendars.length; ++i){
       let calendar = calendars[i];
-      let startDate = new Date(2023, 0, 1);
-      let endDate = new Date(2023, 11, 31);
 
       let result = calendar.getEvents(startDate, endDate);
       //console.log(result);
