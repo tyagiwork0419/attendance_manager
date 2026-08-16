@@ -142,6 +142,24 @@ class GasClient {
     }
   }
 
+  /// パスワードを変更する。現在のパスワードによる本人確認を伴う。
+  ///
+  /// 現在のパスワードが違う場合や新しいパスワードが条件を満たさない場合は
+  /// [GasException] を投げる。呼び出し側でメッセージをそのまま表示できる。
+  Future<void> changePassword(
+    String name, {
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _send({
+      'action': 'changePassword',
+      'name': name,
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+      'deviceToken': _device.token,
+    });
+  }
+
   /// 端末登録を解除する。サーバー側で revoke された場合にも使う。
   void clearDevice() {
     _device.clear();

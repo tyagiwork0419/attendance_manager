@@ -35,6 +35,20 @@ var PUBLIC_ACTIONS = ['getUsers', 'registerDevice', 'login'];
 var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
 
 /**
+ * 端末トークンに加えて、現在のパスワードによる本人確認を行う操作。
+ * セッショントークンは使わない（変更前のパスワードそのものが本人確認になる）。
+ */
+var ACCOUNT_ACTIONS = ['changePassword'];
+
+/**
+ * 新しいパスワードの最低文字数。
+ *
+ * 端末トークンの導入でパスワードを日常的に打つ必要がなくなったため、
+ * 以前の4桁数字より長くしても運用の負担にならない。
+ */
+var MIN_PASSWORD_LENGTH = 6;
+
+/**
  * 端末トークンに加えて「本人であること」まで必要な操作。
  *
  * 自分名義で登録した端末からは自分の分をそのまま開ける。
@@ -79,8 +93,9 @@ function doPost(e) {
 
     var isDeviceAction = DEVICE_ACTIONS.indexOf(action) >= 0;
     var isPersonalAction = PERSONAL_ACTIONS.indexOf(action) >= 0;
+    var isAccountAction = ACCOUNT_ACTIONS.indexOf(action) >= 0;
 
-    if (!isDeviceAction && !isPersonalAction) {
+    if (!isDeviceAction && !isPersonalAction && !isAccountAction) {
       return fail_('不明な action です: ' + action, 'unknown_action');
     }
 
@@ -88,6 +103,12 @@ function doPost(e) {
     var device = resolveDevice_(req.deviceToken);
     if (!device) {
       return fail_('この端末は登録されていません', 'device_unauthorized');
+    }
+
+    // パスワード変更は現在のパスワードで本人確認するため、
+    // PERSONAL_ACTIONS のセッション判定は経由しない。
+    if (action === 'changePassword') {
+      return handleChangePassword_(req);
     }
 
     if (isPersonalAction) {
@@ -261,6 +282,73 @@ function loadUserRecord_(name) {
     }
   }
   return null;
+}
+
+/**
+ * パスワードを変更する。現在のパスワードを知っていることが条件。
+ *
+ * 呼び出しには端末トークンも必要（doPost 側で検証済み）。つまり
+ * 「登録済みの端末から」かつ「現在のパスワードを知っている」場合にのみ通る。
+ */
+function handleChangePassword_(req) {
+  var name = req.name;
+  var currentPassword = req.currentPassword;
+  var newPassword = String(req.newPassword == null ? '' : req.newPassword);
+
+  if (!name || !currentPassword) {
+    return fail_('名前と現在のパスワードを入力してください', 'invalid_credentials');
+  }
+
+  var record = loadUserRecord_(name);
+  var expected = record ? record.password : '';
+  if (!record || !timingSafeEqual_(String(currentPassword), expected)) {
+    return fail_('現在のパスワードが違います', 'invalid_credentials');
+  }
+
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return fail_(
+      '新しいパスワードは' + MIN_PASSWORD_LENGTH + '文字以上にしてください',
+      'weak_password'
+    );
+  }
+
+  if (newPassword === String(currentPassword)) {
+    return fail_('現在のパスワードと同じです', 'weak_password');
+  }
+
+  writeUserPassword_(name, newPassword);
+  return ok_({ name: name });
+}
+
+/** users シートのパスワード欄を書き換える。 */
+function writeUserPassword_(name, newPassword) {
+  var book = SpreadsheetApp.openById(USERS_SPREADSHEET_ID);
+  var sheet = book.getSheetByName(USERS_SHEET_NAME);
+  if (!sheet) {
+    throw new Error(USERS_SHEET_NAME + ' シートが見つかりません');
+  }
+
+  var values = sheet.getDataRange().getValues();
+  var header = values[0].map(function (h) {
+    return String(h).trim().toLowerCase();
+  });
+  var nameIndex = header.indexOf(COLUMN_NAME);
+  var passwordIndex = header.indexOf(COLUMN_PASSWORD);
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][nameIndex]).trim() !== name) {
+      continue;
+    }
+
+    var cell = sheet.getRange(i + 1, passwordIndex + 1);
+    // 書式を文字列にしてから書く。数字だけのパスワードが数値と解釈されると
+    // 先頭の 0 が失われてしまうため（"0123" -> 123）。
+    cell.setNumberFormat('@');
+    cell.setValue(newPassword);
+    return;
+  }
+
+  throw new Error('ユーザーが見つかりません: ' + name);
 }
 
 // ---------------------------------------------------------------------------
