@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'device_session.dart';
+
 /// GAS からのエラー応答。
 class GasException implements Exception {
   final String message;
@@ -10,7 +12,11 @@ class GasException implements Exception {
 
   GasException(this.message, {this.code});
 
+  /// 本人確認が必要。パスワード入力を促す。
   bool get isUnauthorized => code == 'unauthorized';
+
+  /// 端末が未登録または失効している。端末登録からやり直す必要がある。
+  bool get isDeviceUnauthorized => code == 'device_unauthorized';
 
   @override
   String toString() => message;
@@ -22,12 +28,19 @@ class GasException implements Exception {
 /// OAuth のやりとりは不要で、ログインで得たセッショントークンのみを添付する。
 class GasClient {
   final String _webAppUrl;
+  final DeviceSession _device;
 
+  /// 本人確認用の短命セッション。他人のタイムカードを開くときだけ使う。
   String? _sessionToken;
 
-  GasClient(this._webAppUrl);
+  GasClient(this._webAppUrl, this._device);
 
   bool get isAuthenticated => _sessionToken != null;
+
+  bool get isDeviceRegistered => _device.isRegistered;
+
+  /// この端末の名義。共有端末なら null。
+  String? get deviceUser => _device.user;
 
   void clearSession() {
     _sessionToken = null;
@@ -97,17 +110,66 @@ class GasClient {
     }
   }
 
+  /// この端末を登録する。以後は端末トークンだけでデータ操作ができる。
+  ///
+  /// [shared] を true にすると共有端末として登録し、名義を持たせない。
+  /// その場合タイムカードの閲覧には都度パスワードが必要になる。
+  ///
+  /// パスワードが違う場合は false を返す。
+  Future<bool> registerDevice(
+    String name,
+    String password, {
+    required String label,
+    required bool shared,
+  }) async {
+    try {
+      final dynamic result = await _send({
+        'action': 'registerDevice',
+        'name': name,
+        'password': password,
+        'label': label,
+        'shared': shared,
+      });
+
+      final Map<String, dynamic> map = result as Map<String, dynamic>;
+      _device.save(map['token'] as String, map['user'] as String?);
+      return true;
+    } on GasException catch (e) {
+      if (e.code == 'invalid_credentials') {
+        return false;
+      }
+      rethrow;
+    }
+  }
+
+  /// 端末登録を解除する。サーバー側で revoke された場合にも使う。
+  void clearDevice() {
+    _device.clear();
+    _sessionToken = null;
+  }
+
   /// データ操作を呼び出す。戻り値は既存の呼び出し側に合わせて JSON 文字列。
+  ///
+  /// 端末が失効していた場合はローカルの登録も破棄する。そうしないと
+  /// 使えないトークンを送り続けることになる。
   Future<String> post(String functionName, Object parameters) async {
     final Map<String, dynamic> payload = {
       'action': functionName,
       'parameters': parameters,
+      'deviceToken': _device.token,
     };
     if (_sessionToken != null) {
       payload['token'] = _sessionToken;
     }
 
-    final dynamic result = await _send(payload);
-    return result is String ? result : json.encode(result);
+    try {
+      final dynamic result = await _send(payload);
+      return result is String ? result : json.encode(result);
+    } on GasException catch (e) {
+      if (e.isDeviceUnauthorized) {
+        clearDevice();
+      }
+      rethrow;
+    }
   }
 }

@@ -344,30 +344,69 @@ GAS 側は `e.postData.contents` から本文を読むため、この指定で�
 `code` の値: `invalid_credentials` / `unauthorized` / `unknown_action` /
 `no_action` / `empty_request` / `internal_error`
 
-## アクセス制御の方針（意図的な設定）
+## アクセス制御
 
-`Auth.gs` の `OPEN_DATA_ACTIONS` に含まれる操作は**ログイン不要**である。
+「端末を信頼する」方式を採っている。**打刻のたびのログインは不要**だが、
+Web アプリ URL を知っただけの第三者はデータに一切触れられない。
 
 ```javascript
-var OPEN_DATA_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
-var PROTECTED_ACTIONS = ['selectByName'];
+var PUBLIC_ACTIONS   = ['getUsers', 'registerDevice', 'login'];
+var DEVICE_ACTIONS   = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
+var PERSONAL_ACTIONS = ['selectByName'];
 ```
 
-打刻をログインなしで行える UX を優先した、意図的な設定である（設定漏れではない）。
+| 区分 | 必要なもの |
+|---|---|
+| `PUBLIC_ACTIONS` | なし（端末登録画面を出すために必要） |
+| `DEVICE_ACTIONS` | 有効な端末トークン |
+| `PERSONAL_ACTIONS` | 端末トークン + 本人であること |
 
-### 受け入れているリスク
+### 端末トークン
 
-このアプリは公開リポジトリから GitHub Pages に配信されており、ビルド成果物に
-Web アプリ URL が埋め込まれる。サイトを開けば URL を読み出せるため、
-**URL は事実上公開されている**。
+初回だけ端末登録を行うと、サーバーが長命なトークンを発行する。
+クライアントはこれを `localStorage` に保存するため、ブラウザを閉じても
+PC を再起動しても、アプリを再デプロイしても保持される。
 
-したがって `OPEN_DATA_ACTIONS` の操作は誰でも実行でき、打刻データの
-追加・書き換え・削除が第三者に可能である（`updateById` は削除にも使われる）。
-この状態を承知のうえで採用している。
+サーバー側は `devices` シートに **SHA-256 ハッシュのみ**を保存する。
+シートが漏れても、そこから他人の端末として振る舞うことはできない。
 
-### 方針を変える場合
+### 本人確認
 
-対象を `PROTECTED_ACTIONS` に移し、クライアント側も起動時ログインを必須にする。
+`selectByName`（タイムカード）は個人データなので、端末トークンだけでは足りない。
 
-セッションは `TOKEN_TTL_SECONDS`（6時間）有効なので、共有端末であれば
-始業時に1回ログインすれば終業まで保つ。打刻のたびの入力にはならない。
+- **自分名義で登録した端末から自分の分を見る** → パスワード不要
+- **共有端末から、または他人の分を見る** → その人のパスワードでログインが必要
+  （`TOKEN_TTL_SECONDS` = 6時間有効なセッション）
+
+クライアントは条件を判定せず、まず開こうとして `unauthorized` が返ったときに
+初めてパスワードを要求する。権限判定をサーバーに一本化するためである。
+
+### 端末の管理
+
+`devices` シートは初回登録時に自動生成される。
+
+| 列 | 内容 |
+|---|---|
+| `token_hash` | 端末トークンの SHA-256 |
+| `user` | 所有者の名前。**空欄なら共有端末** |
+| `label` | 端末の名前（任意）。「事務所PC」「八木のiPhone」など |
+| `created` | 登録日時 |
+| `last_used` | 最終利用日（日付が変わったときだけ更新） |
+| `revoked` | `TRUE` にするとその端末を締め出す |
+
+**端末を紛失・入れ替えたときは `revoked` を `TRUE` にする。**
+反映は最大 `DEVICE_CACHE_SECONDS`（60秒）遅れる。締め出された端末は
+次回アクセス時にローカルのトークンを破棄し、登録画面に戻る。
+
+### 注意点
+
+**ブラウザ・プロファイル単位**である。別のブラウザやシークレットウィンドウ、
+ブラウザデータの削除後は再登録が必要になる。
+
+**iOS / iPadOS の Safari** は、7日間アクセスがないと localStorage を
+自動削除することがある（ITP）。毎日使う端末なら問題にならないが、
+予備端末では再登録が発生し得る。
+
+**XSS には注意**。localStorage は同一オリジンの JS から読めるため、
+外部スクリプトを読み込むとトークンを盗まれ得る。現状このアプリは
+自前コードのみで CDN も使っていない。

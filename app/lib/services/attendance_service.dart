@@ -19,6 +19,26 @@ class AttendanceService {
 
   bool get isAuthenticated => _gasClient.isAuthenticated;
 
+  bool get isDeviceRegistered => _gasClient.isDeviceRegistered;
+
+  /// この端末の名義。共有端末なら null。
+  String? get deviceUser => _gasClient.deviceUser;
+
+  /// この端末を登録する。パスワードが違う場合は false を返す。
+  Future<bool> registerDevice(
+    String name,
+    String password, {
+    required String label,
+    required bool shared,
+  }) {
+    return _gasClient.registerDevice(name, password,
+        label: label, shared: shared);
+  }
+
+  void clearDevice() {
+    _gasClient.clearDevice();
+  }
+
   /// ログイン画面に表示する名前の一覧。GAS 側から取得する。
   Future<List<String>> getUserNames() {
     return _gasClient.getUserNames();

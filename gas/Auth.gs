@@ -22,29 +22,26 @@
 /** セッションの有効期間(秒)。CacheService の上限は 21600 秒 (6時間)。 */
 var TOKEN_TTL_SECONDS = 21600;
 
-/** 認証不要。ログイン画面を出すために必要。 */
-var PUBLIC_ACTIONS = ['getUsers', 'login'];
+/** 認証不要。端末登録の画面を出すために必要。 */
+var PUBLIC_ACTIONS = ['getUsers', 'registerDevice', 'login'];
 
 /**
- * ログイン不要で呼べるデータ操作。
+ * 登録済み端末からのみ実行できる操作。
  *
- * === これは意図的な設定である（見落としではない） ===
- * 打刻をログインなしで行える UX を優先し、認証を課さない選択をしている。
- *
- * ただし前提として、アプリは公開リポジトリから GitHub Pages に配信されており、
- * ビルド成果物にこの Web アプリ URL が埋め込まれる。つまり URL は事実上公開で、
- * ここに列挙した操作は誰でも実行できる。打刻データの追加・書き換え・削除
- * （updateById は削除にも使われる）が第三者に可能な状態を受け入れている。
- *
- * 方針を変える場合は、対象を PROTECTED_ACTIONS へ移し、
- * クライアント側も起動時ログインを必須にする。
- * セッションは TOKEN_TTL_SECONDS (6時間) 有効なので、共有端末なら
- * 始業時に1回ログインすれば終業まで保つ。
+ * 端末トークンは localStorage に永続化されるため、利用者から見ると
+ * 「最初の1回だけ端末登録すれば、以後は毎日そのまま打刻できる」動作になる。
+ * 一方で URL を知っただけの第三者は端末トークンを持たないため何もできない。
  */
-var OPEN_DATA_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
+var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
 
-/** 有効なセッショントークンが必須のデータ操作。 */
-var PROTECTED_ACTIONS = ['selectByName'];
+/**
+ * 端末トークンに加えて「本人であること」まで必要な操作。
+ *
+ * 自分名義で登録した端末からは自分の分をそのまま開ける。
+ * 共有端末（user が空）や他人の分を見る場合は、その人のパスワードで
+ * ログインして得たセッショントークンが要る。
+ */
+var PERSONAL_ACTIONS = ['selectByName'];
 
 // ---------------------------------------------------------------------------
 // エントリポイント
@@ -72,21 +69,38 @@ function doPost(e) {
       return ok_(listUserNames_());
     }
 
+    if (action === 'registerDevice') {
+      return handleRegisterDevice_(req);
+    }
+
     if (action === 'login') {
       return handleLogin_(req);
     }
 
-    var isOpen = OPEN_DATA_ACTIONS.indexOf(action) >= 0;
-    var isProtected = PROTECTED_ACTIONS.indexOf(action) >= 0;
+    var isDeviceAction = DEVICE_ACTIONS.indexOf(action) >= 0;
+    var isPersonalAction = PERSONAL_ACTIONS.indexOf(action) >= 0;
 
-    if (!isOpen && !isProtected) {
+    if (!isDeviceAction && !isPersonalAction) {
       return fail_('不明な action です: ' + action, 'unknown_action');
     }
 
-    if (isProtected) {
-      var session = resolveSession_(req.token);
-      if (!session) {
-        return fail_('ログインが必要です', 'unauthorized');
+    // ここから先はすべて登録済み端末からの呼び出しであることが前提。
+    var device = resolveDevice_(req.deviceToken);
+    if (!device) {
+      return fail_('この端末は登録されていません', 'device_unauthorized');
+    }
+
+    if (isPersonalAction) {
+      var target = (req.parameters && req.parameters.name) || '';
+
+      // 自分名義の端末で自分の分を見る場合はパスワード不要。
+      var isOwnDevice = device.user !== '' && device.user === target;
+
+      if (!isOwnDevice) {
+        var session = resolveSession_(req.token);
+        if (!session || session.name !== target) {
+          return fail_('本人確認が必要です', 'unauthorized');
+        }
       }
     }
 
@@ -250,11 +264,170 @@ function loadUserRecord_(name) {
 }
 
 // ---------------------------------------------------------------------------
+// 端末管理 (同じスプレッドシートの devices シート)
+// ---------------------------------------------------------------------------
+//
+// シート構成（初回登録時に自動生成される）:
+//   token_hash | user | label | created | last_used | revoked
+//
+// token_hash : 端末トークンの SHA-256。生の値は保存しないので、
+//              シートが漏れても他人の端末として振る舞うことはできない。
+// user       : 所有者の名前。空欄なら共有端末。
+//              自分名義の端末からは、自分のタイムカードをパスワードなしで開ける。
+// revoked    : TRUE にするとその端末だけ即座に締め出せる（端末の紛失・入替用）。
+
+var DEVICES_SHEET_NAME = 'devices';
+var DEVICE_HEADER = ['token_hash', 'user', 'label', 'created', 'last_used', 'revoked'];
+
+/** 端末検証結果のキャッシュ秒数。revoke の反映もこの分だけ遅れる。 */
+var DEVICE_CACHE_SECONDS = 60;
+
+function devicesSheet_() {
+  var book = SpreadsheetApp.openById(USERS_SPREADSHEET_ID);
+  var sheet = book.getSheetByName(DEVICES_SHEET_NAME);
+  if (!sheet) {
+    sheet = book.insertSheet(DEVICES_SHEET_NAME);
+    sheet.appendRow(DEVICE_HEADER);
+  }
+  return sheet;
+}
+
+function deviceColumnIndexes_(header) {
+  var lower = header.map(function (h) {
+    return String(h).trim().toLowerCase();
+  });
+  return {
+    tokenHash: lower.indexOf('token_hash'),
+    user: lower.indexOf('user'),
+    revoked: lower.indexOf('revoked'),
+    lastUsed: lower.indexOf('last_used')
+  };
+}
+
+/**
+ * 端末トークンを検証する。
+ * 有効なら { user: 所有者名 or '' } を返し、無効なら null。
+ */
+function resolveDevice_(token) {
+  if (!token) {
+    return null;
+  }
+
+  var hash = sha256Hex_(token);
+  var cache = CacheService.getScriptCache();
+  var cacheKey = 'device:' + hash;
+
+  var cached = cache.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  var sheet = devicesSheet_();
+  var values = sheet.getDataRange().getValues();
+  if (values.length < 2) {
+    return null;
+  }
+
+  var col = deviceColumnIndexes_(values[0]);
+  if (col.tokenHash < 0) {
+    return null;
+  }
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][col.tokenHash]).trim() !== hash) {
+      continue;
+    }
+
+    var revoked = String(values[i][col.revoked]).trim().toUpperCase();
+    if (revoked === 'TRUE' || revoked === '1' || revoked === 'はい') {
+      return null;
+    }
+
+    touchDeviceLastUsed_(sheet, i + 1, col.lastUsed, values[i][col.lastUsed]);
+
+    var device = { user: String(values[i][col.user] || '').trim() };
+    cache.put(cacheKey, JSON.stringify(device), DEVICE_CACHE_SECONDS);
+    return device;
+  }
+
+  return null;
+}
+
+/**
+ * 最終利用日を更新する。毎リクエスト書き込むとシートが競合するため、
+ * 日付が変わったときだけ書く。
+ */
+function touchDeviceLastUsed_(sheet, rowNumber, columnIndex, current) {
+  if (columnIndex < 0) {
+    return;
+  }
+  var today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd');
+  if (String(current).indexOf(today) === 0) {
+    return;
+  }
+  try {
+    sheet.getRange(rowNumber, columnIndex + 1).setValue(today);
+  } catch (err) {
+    // 監査用の情報なので、書けなくても認証は通す。
+    console.warn('last_used を更新できませんでした: ' + err);
+  }
+}
+
+/**
+ * 端末を登録する。登録には既存ユーザーのパスワードが必要。
+ * 発行したトークンはこの応答でしか返さない（サーバーはハッシュしか保持しない）。
+ */
+function handleRegisterDevice_(req) {
+  var name = req.name;
+  var password = req.password;
+
+  if (!name || !password) {
+    return fail_('名前とパスワードを入力してください', 'invalid_credentials');
+  }
+
+  var record = loadUserRecord_(name);
+  var expected = record ? record.password : '';
+  if (!record || !timingSafeEqual_(String(password), expected)) {
+    return fail_('名前またはパスワードが違います', 'invalid_credentials');
+  }
+
+  var token = Utilities.getUuid() + Utilities.getUuid();
+  var shared = req.shared === true;
+
+  devicesSheet_().appendRow([
+    sha256Hex_(token),
+    shared ? '' : name,
+    String(req.label || '').trim(),
+    Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss'),
+    '',
+    'FALSE'
+  ]);
+
+  return ok_({ token: token, user: shared ? '' : name, shared: shared });
+}
+
+// ---------------------------------------------------------------------------
 // パスワード照合
 // ---------------------------------------------------------------------------
 //
 // シートには平文で保存されているため、そのまま比較する。
 // シートはサーバー側でのみ読まれ、クライアントには渡らない。
+
+/** 端末トークンの保存用。生の値をシートに残さないために使う。 */
+function sha256Hex_(value) {
+  var bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(value),
+    Utilities.Charset.UTF_8
+  );
+  var hex = '';
+  for (var i = 0; i < bytes.length; i++) {
+    // GAS の computeDigest は符号付きバイトを返すため 0-255 に戻す。
+    var b = (bytes[i] + 256) % 256;
+    hex += (b < 16 ? '0' : '') + b.toString(16);
+  }
+  return hex;
+}
 
 /** 文字単位の差分を全て走査し、一致位置による処理時間の差を作らない。 */
 function timingSafeEqual_(a, b) {

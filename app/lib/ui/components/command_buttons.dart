@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../application/constants.dart';
 import '../../models/attend_data.dart';
 import '../../services/attendance_service.dart';
+import '../../services/gas_client.dart';
 import '../pages/timecard_page.dart';
 import 'dialogs/datetime_picker_dialog.dart';
 import 'dialogs/login_dialog.dart';
@@ -109,10 +110,7 @@ class _CommandButtonsState extends State<CommandButtons> {
                                 backgroundColor:
                                     MaterialStateProperty.all<Color?>(
                                         Constants.brown)),
-                            onPressed: () {
-                              _login();
-                              //_transitionToTimecardPage();
-                            },
+                            onPressed: _openTimecard,
                             child: Text('タイムカード', style: buttonTextStyle1))),
                 ]));
   }
@@ -155,7 +153,37 @@ class _CommandButtonsState extends State<CommandButtons> {
     }
   }
 
-  Future<void> _login() async {
+  /// タイムカードを開く。
+  ///
+  /// 自分名義で登録した端末から自分の分を見る場合はパスワード不要。
+  /// それ以外はサーバーが unauthorized を返すので、そこで初めて本人確認を求める。
+  /// 権限判定はサーバーが持っているため、クライアント側では条件を重複させない。
+  Future<void> _openTimecard() async {
+    try {
+      String sheetId = _attendanceService.getSheetId(widget.dateTime);
+      String sheetName = _attendanceService.getSheetName(widget.dateTime);
+
+      await _attendanceService.getByName(sheetId, sheetName, widget.name);
+
+      if (!mounted) {
+        return;
+      }
+      _transitionToTimecardPage();
+    } on GasException catch (e) {
+      if (!mounted) {
+        return;
+      }
+      if (e.isUnauthorized) {
+        await _loginThenOpenTimecard();
+        return;
+      }
+      widget.onError!(e);
+    } catch (e) {
+      widget.onError!(e);
+    }
+  }
+
+  Future<void> _loginThenOpenTimecard() async {
     bool? result = await showDialog<bool?>(
         context: context,
         builder: (_) {
@@ -165,16 +193,10 @@ class _CommandButtonsState extends State<CommandButtons> {
           );
         });
 
-    if (result == null) {
+    if (result == null || !result || !mounted) {
       return;
     }
-    try {
-      if (result) {
-        _transitionToTimecardPage();
-      }
-    } catch (e) {
-      widget.onError!(e);
-    }
+    _transitionToTimecardPage();
   }
 
   void _transitionToTimecardPage() async {
