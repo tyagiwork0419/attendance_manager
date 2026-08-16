@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/attend_data.dart';
 import '../../services/attendance_service.dart';
+import '../../services/gas_client.dart';
 import '../../application/constants.dart';
 
 import '../components/data_table_view.dart';
@@ -19,10 +20,16 @@ import '../components/my_app_bar.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage(
-      {super.key, required this.title, required this.attendanceService});
+      {super.key,
+      required this.title,
+      required this.attendanceService,
+      required this.onDeviceRevoked});
 
   final String title;
   final AttendanceService attendanceService;
+
+  /// 端末が失効していた場合に呼ばれる。登録画面へ戻すために使う。
+  final VoidCallback onDeviceRevoked;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -101,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!mounted) {
         return;
       }
-      ErrorDialog.showErrorDialog(context, e);
+      _handleError(e);
     }
   }
 
@@ -288,8 +295,17 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _isLoading = false;
       });
-      ErrorDialog.showErrorDialog(context, e);
+      _handleError(e);
     }
+  }
+
+  /// 端末が失効していたら登録画面へ戻す。それ以外は通常のエラー表示。
+  void _handleError(Object e) {
+    if (e is GasException && e.isDeviceUnauthorized) {
+      widget.onDeviceRevoked();
+      return;
+    }
+    ErrorDialog.showErrorDialog(context, e);
   }
 
   Future<void> _deleteRow(AttendData data) async {
@@ -317,7 +333,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _isLoading = false;
       });
-      ErrorDialog.showErrorDialog(context, e);
+      _handleError(e);
     }
   }
 

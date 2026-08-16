@@ -4,6 +4,7 @@ import 'package:attendance_manager/application/constants.dart';
 import 'package:attendance_manager/models/attend_data.dart';
 import 'package:attendance_manager/models/calendar.dart';
 import 'package:attendance_manager/services/attendance_service.dart';
+import 'package:attendance_manager/services/device_session.dart';
 import 'package:attendance_manager/services/gas_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,7 +16,7 @@ void main() {
   const String testName = 'test';
 
   setUp(() {
-    gasClient = GasClient(Constants.webAppUrl);
+    gasClient = GasClient(Constants.webAppUrl, DeviceSession());
 
     service = AttendanceService(gasClient);
   });
