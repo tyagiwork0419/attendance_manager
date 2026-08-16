@@ -39,6 +39,16 @@ class AttendanceService {
     _gasClient.clearDevice();
   }
 
+  /// パスワードを変更する。失敗時は [GasException] を投げる。
+  Future<void> changePassword(
+    String name, {
+    required String currentPassword,
+    required String newPassword,
+  }) {
+    return _gasClient.changePassword(name,
+        currentPassword: currentPassword, newPassword: newPassword);
+  }
+
   /// ログイン画面に表示する名前の一覧。GAS 側から取得する。
   Future<List<String>> getUserNames() {
     return _gasClient.getUserNames();

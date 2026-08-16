@@ -12,6 +12,7 @@ import '../../services/gas_client.dart';
 import '../../application/constants.dart';
 
 import '../components/data_table_view.dart';
+import '../components/dialogs/change_password_dialog.dart';
 import '../components/dialogs/delete_dialog.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
@@ -299,6 +300,34 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> _onMenuSelected(AppBarMenu item) async {
+    switch (item) {
+      case AppBarMenu.changePassword:
+        await _changePassword();
+        break;
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final bool? changed = await showDialog<bool>(
+        context: context,
+        builder: (_) {
+          return ChangePasswordDialog(
+            attendanceService: _attendanceService,
+            userNames: _userNames,
+            initialName: _attendanceService.deviceUser,
+          );
+        });
+
+    if (changed != true || !mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('パスワードを変更しました')),
+    );
+  }
+
   /// 端末が失効していたら登録画面へ戻す。それ以外は通常のエラー表示。
   void _handleError(Object e) {
     if (e is GasException && e.isDeviceUnauthorized) {
@@ -434,7 +463,10 @@ class _MyHomePageState extends State<MyHomePage> {
         _selectedDate.day, now.hour, now.minute, now.second);
 
     return Scaffold(
-        appBar: MyAppBar(title: widget.title, version: Constants.version)
+        appBar: MyAppBar(
+                title: widget.title,
+                version: Constants.version,
+                onMenuSelected: _onMenuSelected)
             .appBar(context),
         body: SingleChildScrollView(
             child: Padding(
