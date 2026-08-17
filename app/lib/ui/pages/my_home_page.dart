@@ -396,17 +396,67 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  /// 前日・当日・翌日を並べた日付の操作列。
+  Widget _dateBar() {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _dateStepButton(Icons.arrow_left, '前日のデータに更新', -1),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: _dateButton(_selectedDate, _selectDate),
+          ),
+          _dateStepButton(Icons.arrow_right, '翌日のデータに更新', 1),
+        ],
+      ),
+    );
+  }
+
+  /// 日付を [days] だけ動かす三角ボタン。
+  ///
+  /// 読み込み中は無効にする。連打すると複数の問い合わせが並行し、
+  /// 応答の到着順によっては最後に押した日付と違う結果が残るため。
+  Widget _dateStepButton(IconData icon, String tooltip, int days) {
+    return Tooltip(
+      message: tooltip,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : () => _shiftDate(days),
+        style: ButtonStyle(
+          padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.zero),
+          minimumSize: MaterialStateProperty.all<Size>(const Size(48, 36)),
+        ),
+        child: Icon(icon, size: 30),
+      ),
+    );
+  }
+
   Widget _dateButton(DateTime date, VoidCallback onPressed) {
     // 曜日を日本語で出すためロケールを渡す。省略すると Mon のような英語表記になる。
     final DateFormat dateFormat = DateFormat('yyyy年MM月dd日(E)', Constants.locale);
-    return Center(
-        child: ElevatedButton(
+    return ElevatedButton(
       //child: Text(_dateFormat.format(_selectedDate)),
       child: Text(dateFormat.format(date)),
       onPressed: () {
         onPressed();
       },
-    ));
+    );
+  }
+
+  /// 選択中の日付を [days] 日ずらして読み込み直す。
+  ///
+  /// DateTime のコンストラクタは桁あふれを繰り上げてくれるので、
+  /// 月末・年末をまたいでも正しい日付になる。
+  void _shiftDate(int days) {
+    final DateTime next = DateTime(
+        _selectedDate.year, _selectedDate.month, _selectedDate.day + days);
+
+    _selectedDate = next;
+    setState(() {
+      _updateDataRow([]);
+    });
+
+    _getByDateTime(next);
   }
 
   void _onPickDate() {
@@ -483,7 +533,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SizedBox(
                 width: double.infinity,
                 height: MediaQuery.of(context).size.height * 0.05,
-                child: _dateButton(_selectedDate, _selectDate)),
+                child: _dateBar()),
             Padding(
                 padding: Constants.topBottomPadding,
                 child: SizedBox(
