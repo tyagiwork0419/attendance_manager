@@ -27,12 +27,19 @@ class TimecardPage extends StatefulWidget {
   final String name;
   final DateTime dateTime;
 
+  /// 遷移元で取得済みの [dateTime] の月のデータ。
+  ///
+  /// 遷移元は権限確認のために同じ問い合わせを既に済ませているので、
+  /// その結果を受け取って初回の再取得を省く。
+  final List<AttendData> initialData;
+
   const TimecardPage(
       {super.key,
       required this.service,
       //required this.title,
       required this.name,
-      required this.dateTime})
+      required this.dateTime,
+      required this.initialData})
       : title = 'タイムカード ( $name )';
 
   @override
@@ -61,14 +68,15 @@ class _TimecardPageState extends State<TimecardPage> {
 
     _service = widget.service;
     _isLoading = false;
-    _monthlyTimecard = null;
-
-    DateTime now = DateTime.now();
 
     _name = widget.name;
     _selectedDate = widget.dateTime;
 
-    _getByName(_name, now);
+    // 遷移元が取得済みのデータで初期化する。
+    // 以前はここで DateTime.now() の月を取り直していたため、
+    // 別の月を選んで開くと月表示と中身が食い違っていた。
+    _monthlyTimecard = null;
+    _updateTimecard(widget.initialData);
   }
 
   ExpandableTableCell _createFirstHeaderCell() {
@@ -207,7 +215,11 @@ class _TimecardPageState extends State<TimecardPage> {
     String sheetName = _service.getSheetName(dateTime);
 
     try {
-      _isLoading = true;
+      // setState の外で立てていたため再描画されず、取得中の表示が出ていなかった。
+      setState(() {
+        _isLoading = true;
+      });
+
       List<AttendData> result =
           await _service.getByName(sheetId, sheetName, name);
       if (!mounted) {
@@ -218,6 +230,9 @@ class _TimecardPageState extends State<TimecardPage> {
         _updateTimecard(result);
       });
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _isLoading = false;
       });

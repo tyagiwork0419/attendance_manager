@@ -159,26 +159,32 @@ class _CommandButtonsState extends State<CommandButtons> {
   /// 自分名義で登録した端末から自分の分を見る場合はパスワード不要。
   /// それ以外はサーバーが unauthorized を返すので、そこで初めて本人確認を求める。
   /// 権限判定はサーバーが持っているため、クライアント側では条件を重複させない。
-  Future<void> _openTimecard() async {
+  /// [allowRetry] は本人確認をやり直せる回数を1回に限るためのもの。
+  /// ログイン後もサーバーが拒否し続けた場合に無限に繰り返さないようにする。
+  Future<void> _openTimecard({bool allowRetry = true}) async {
     try {
       // 応答を待つ間に同じボタンを押せてしまわないよう、操作を止める。
-      await LoadingOverlay.during(context, () async {
+      List<AttendData> results =
+          await LoadingOverlay.during(context, () async {
         String sheetId = _attendanceService.getSheetId(widget.dateTime);
         String sheetName = _attendanceService.getSheetName(widget.dateTime);
 
-        await _attendanceService.getByName(sheetId, sheetName, widget.name);
+        return _attendanceService.getByName(sheetId, sheetName, widget.name);
       });
 
       if (!mounted) {
         return;
       }
-      _transitionToTimecardPage();
+      // 取得済みのデータを渡す。遷移先で同じ問い合わせを繰り返さないため。
+      _transitionToTimecardPage(results);
     } on GasException catch (e) {
       if (!mounted) {
         return;
       }
-      if (e.isUnauthorized) {
-        await _loginThenOpenTimecard();
+      if (e.isUnauthorized && allowRetry) {
+        if (await _promptLogin()) {
+          await _openTimecard(allowRetry: false);
+        }
         return;
       }
       widget.onError!(e);
@@ -187,7 +193,8 @@ class _CommandButtonsState extends State<CommandButtons> {
     }
   }
 
-  Future<void> _loginThenOpenTimecard() async {
+  /// 本人確認のダイアログを出す。成功したら true。
+  Future<bool> _promptLogin() async {
     bool? result = await showDialog<bool?>(
         context: context,
         builder: (_) {
@@ -197,20 +204,18 @@ class _CommandButtonsState extends State<CommandButtons> {
           );
         });
 
-    if (result == null || !result || !mounted) {
-      return;
-    }
-    _transitionToTimecardPage();
+    return result == true && mounted;
   }
 
-  void _transitionToTimecardPage() async {
+  void _transitionToTimecardPage(List<AttendData> initialData) {
     Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => TimecardPage(
                 service: _attendanceService,
                 name: widget.name,
-                dateTime: widget.dateTime)));
+                dateTime: widget.dateTime,
+                initialData: initialData)));
   }
 
   Future<void> _setPaidHoliday() async {
