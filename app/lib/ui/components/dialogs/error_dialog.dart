@@ -14,6 +14,14 @@ class ErrorDialog extends StatelessWidget {
         builder: (_) => ErrorDialog(title: '通信エラー', content: error.toString()));
   }
 
+  /// 通信以外の理由で操作を止めたときに使う。見出しを呼び出し側で決められる。
+  static Future<void> showMessage(BuildContext context,
+      {required String title, required String content}) {
+    return showDialog<void>(
+        context: context,
+        builder: (_) => ErrorDialog(title: title, content: content));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
