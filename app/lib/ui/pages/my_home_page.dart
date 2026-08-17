@@ -433,6 +433,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _isLoading = false;
     });
+    // 以前はここで握り潰していたため、打刻が失敗しても画面に何も出なかった。
+    _handleError(error);
   }
 
   Widget _nameButtons() {
