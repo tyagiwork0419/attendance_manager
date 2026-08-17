@@ -7,6 +7,7 @@ import '../../services/attendance_service.dart';
 import '../../services/gas_client.dart';
 import '../pages/timecard_page.dart';
 import 'dialogs/datetime_picker_dialog.dart';
+import 'dialogs/loading_overlay.dart';
 import 'dialogs/login_dialog.dart';
 
 class CommandButtons extends StatefulWidget {
@@ -160,10 +161,13 @@ class _CommandButtonsState extends State<CommandButtons> {
   /// 権限判定はサーバーが持っているため、クライアント側では条件を重複させない。
   Future<void> _openTimecard() async {
     try {
-      String sheetId = _attendanceService.getSheetId(widget.dateTime);
-      String sheetName = _attendanceService.getSheetName(widget.dateTime);
+      // 応答を待つ間に同じボタンを押せてしまわないよう、操作を止める。
+      await LoadingOverlay.during(context, () async {
+        String sheetId = _attendanceService.getSheetId(widget.dateTime);
+        String sheetName = _attendanceService.getSheetName(widget.dateTime);
 
-      await _attendanceService.getByName(sheetId, sheetName, widget.name);
+        await _attendanceService.getByName(sheetId, sheetName, widget.name);
+      });
 
       if (!mounted) {
         return;
