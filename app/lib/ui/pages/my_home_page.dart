@@ -560,6 +560,7 @@ class _MyHomePageState extends State<MyHomePage> {
             // 名前一覧の取得前は打刻対象が確定しないため操作ボタンを出さない。
             if (_userNames.isNotEmpty)
               CommandButtons(_attendanceService, _chooseName, dateTime,
+                  dataList: _dataList,
                   onPickDate: _onPickDate,
                   onGetResults: _onGetResults,
                   onError: _onError),
