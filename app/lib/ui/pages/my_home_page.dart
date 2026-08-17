@@ -397,7 +397,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _dateButton(DateTime date, VoidCallback onPressed) {
-    final DateFormat dateFormat = DateFormat('yyyy年MM月dd日');
+    // 曜日を日本語で出すためロケールを渡す。省略すると Mon のような英語表記になる。
+    final DateFormat dateFormat = DateFormat('yyyy年MM月dd日(E)', Constants.locale);
     return Center(
         child: ElevatedButton(
       //child: Text(_dateFormat.format(_selectedDate)),
