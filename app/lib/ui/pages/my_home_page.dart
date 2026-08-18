@@ -14,6 +14,7 @@ import '../../application/constants.dart';
 import '../components/data_table_view.dart';
 import '../components/dialogs/change_password_dialog.dart';
 import '../components/dialogs/delete_dialog.dart';
+import '../components/dialogs/device_settings_dialog.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
 
@@ -305,7 +306,37 @@ class _MyHomePageState extends State<MyHomePage> {
       case AppBarMenu.changePassword:
         await _changePassword();
         break;
+      case AppBarMenu.deviceSettings:
+        await _openDeviceSettings();
+        break;
     }
+  }
+
+  Future<void> _openDeviceSettings() async {
+    final bool? changed = await showDialog<bool>(
+        context: context,
+        builder: (_) {
+          return DeviceSettingsDialog(
+            attendanceService: _attendanceService,
+            userNames: _userNames,
+            currentUser: _attendanceService.deviceUser,
+          );
+        });
+
+    if (changed != true || !mounted) {
+      return;
+    }
+
+    // 名義の表示が変わるので描き直す。
+    setState(() {});
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_attendanceService.deviceUser == null
+            ? '共有端末に変更しました'
+            : '${_attendanceService.deviceUser} の端末に変更しました'),
+      ),
+    );
   }
 
   Future<void> _changePassword() async {
