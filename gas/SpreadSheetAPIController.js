@@ -238,6 +238,34 @@ class SpreadSheetAPIController {
   }
 
   /**
+   * データのある年を昇順で返す。
+   *
+   * 年ごとに「2026年」という名前のファイルを作る運用なので、
+   * フォルダ内のファイル名から年を拾う。
+   *
+   * 画面側で選べる範囲をこれに合わせると、存在しない年を開いて
+   * _getSheetID がテンプレートから空ファイルを作ってしまうのを防げる。
+   */
+  listYears() {
+    let folder = DriveApp.getFolderById(FOLDER_ID);
+    let files = folder.getFiles();
+
+    let years = [];
+    while (files.hasNext()) {
+      let matched = files.next().getName().match(/^(\d{4})年$/);
+      if (matched) {
+        years.push(Number(matched[1]));
+      }
+    }
+
+    years.sort(function (a, b) {
+      return a - b;
+    });
+
+    return JSON.stringify(years);
+  }
+
+  /**
    * 1年分（ファイル内の全シート）をまとめて返す。
    *
    * 集計ページは12か月ぶんを必要とするが、月ごとに呼ぶと往復が12回になる。

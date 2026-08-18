@@ -91,3 +91,9 @@ function selectByNameForYear(e){
   result = controller.selectByNameForYear(e);
   return result;
 }
+
+function listYears(e){
+  initControllers_();
+  result = controller.listYears();
+  return result;
+}

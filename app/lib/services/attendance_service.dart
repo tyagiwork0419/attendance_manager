@@ -134,6 +134,28 @@ class AttendanceService {
     return result;
   }
 
+  /// データのある年の一覧。昇順。
+  ///
+  /// ほとんど変わらないうえ画面をまたいで使うので、一度取ったら覚えておく。
+  List<int>? _availableYears;
+
+  Future<List<int>> getAvailableYears() async {
+    final List<int>? cached = _availableYears;
+    if (cached != null) {
+      return cached;
+    }
+
+    debugPrint('listYears');
+    var jsonResult = await _gasClient.post('listYears', {});
+    List<dynamic> jsonObj = json.decode(jsonResult);
+
+    final List<int> years =
+        jsonObj.map((dynamic e) => (e as num).toInt()).toList()..sort();
+
+    _availableYears = years;
+    return years;
+  }
+
   /// 1年分をまとめて取得する。集計ページ用。
   ///
   /// 月ごとに呼ぶと往復が12回になるため、GAS 側でまとめてもらう。

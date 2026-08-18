@@ -32,7 +32,7 @@ var PUBLIC_ACTIONS = ['getUsers', 'registerDevice', 'login'];
  * 「最初の1回だけ端末登録すれば、以後は毎日そのまま打刻できる」動作になる。
  * 一方で URL を知っただけの第三者は端末トークンを持たないため何もできない。
  */
-var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
+var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById', 'listYears'];
 
 /**
  * 端末トークンに加えて、現在のパスワードによる本人確認を行う操作。
