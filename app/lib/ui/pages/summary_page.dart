@@ -39,6 +39,19 @@ class _SummaryPageState extends State<SummaryPage> {
   YearlySummary? _summary;
   bool _isLoading = false;
 
+  /// データのある年。ここから外へは移動させない。
+  List<int> _availableYears = [];
+
+  /// その方向にデータのある年が残っているか。
+  bool _canShift(int years) {
+    if (_availableYears.isEmpty) {
+      return false;
+    }
+    return years < 0
+        ? _year > _availableYears.first
+        : _year < _availableYears.last;
+  }
+
   static const List<String> _columnNames = [
     '月',
     '総労働時間',
@@ -53,7 +66,23 @@ class _SummaryPageState extends State<SummaryPage> {
     super.initState();
     _service = widget.service;
     _year = widget.dateTime.year;
+    _loadAvailableYears();
     _load();
+  }
+
+  /// 移動できる範囲を決めるために取る。失敗しても集計の表示は妨げない。
+  Future<void> _loadAvailableYears() async {
+    try {
+      final List<int> years = await _service.getAvailableYears();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _availableYears = years;
+      });
+    } catch (e) {
+      debugPrint('listYears failed: $e');
+    }
   }
 
   Future<void> _load() async {
@@ -200,10 +229,14 @@ class _SummaryPageState extends State<SummaryPage> {
   }
 
   Widget _yearStepButton(IconData icon, String tooltip, int years) {
+    // データのない年へは移動させない。開くと GAS 側が
+    // テンプレートから空のファイルを作ってしまうため。
+    final bool enabled = !_isLoading && _canShift(years);
+
     return Tooltip(
-      message: tooltip,
+      message: enabled ? tooltip : 'これ以上データがありません',
       child: ElevatedButton(
-        onPressed: _isLoading ? null : () => _shiftYear(years),
+        onPressed: enabled ? () => _shiftYear(years) : null,
         style: ButtonStyle(
           padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.zero),
           minimumSize: MaterialStateProperty.all<Size>(const Size(48, 36)),

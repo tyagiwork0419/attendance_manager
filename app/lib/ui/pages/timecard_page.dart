@@ -76,6 +76,9 @@ class _TimecardPageState extends State<TimecardPage> {
   /// その月の生データ。打刻の重複判定に使うので保持しておく。
   List<AttendData> _attendDataList = [];
 
+  /// データのある年。月選択で選べる範囲に使う。
+  List<int> _availableYears = [];
+
   @override
   void initState() {
     super.initState();
@@ -91,6 +94,23 @@ class _TimecardPageState extends State<TimecardPage> {
     // 別の月を選んで開くと月表示と中身が食い違っていた。
     _monthlyTimecard = null;
     _updateTimecard(widget.initialData);
+
+    _loadAvailableYears();
+  }
+
+  /// 月選択の範囲を決めるために取る。失敗しても表の表示は妨げない。
+  Future<void> _loadAvailableYears() async {
+    try {
+      final List<int> years = await _service.getAvailableYears();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _availableYears = years;
+      });
+    } catch (e) {
+      debugPrint('listYears failed: $e');
+    }
   }
 
   ExpandableTableCell _createFirstHeaderCell() {
@@ -353,11 +373,20 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   Future<void> _selectMonth() async {
+    // 選べる範囲はデータのある年の全体。以前は前後1年に固定していたため、
+    // それより古い記録に辿り着けなかった。
+    final int firstYear =
+        _availableYears.isEmpty ? _selectedDate.year - 1 : _availableYears.first;
+    final int lastYear = _availableYears.isEmpty
+        ? _selectedDate.year + 1
+        // 表示中の年が一覧より新しいこともあるので、狭めないようにする。
+        : max(_availableYears.last, _selectedDate.year);
+
     var selectedDate = await showMonthPicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(_selectedDate.year - 1),
-      lastDate: DateTime(_selectedDate.year + 1),
+      firstDate: DateTime(min(firstYear, _selectedDate.year), 1),
+      lastDate: DateTime(lastYear, 12),
     );
 
     // 選択がキャンセルされた場合はNULL
