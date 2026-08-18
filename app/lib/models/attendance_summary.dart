@@ -1,5 +1,6 @@
 import '../application/constants.dart';
 import 'attend_data.dart';
+import 'daily_timecard.dart';
 import 'monthly_timecard.dart';
 
 /// 1か月ぶんの集計。
@@ -10,7 +11,10 @@ class MonthlySummary {
   /// 総労働時間。休憩を差し引いた実働の合計。
   final double workHours;
 
-  /// 総残業時間。1日あたり [Constants.standardWorkHoursPerDay] を超えた分の合計。
+  /// 総残業時間。
+  ///
+  /// 平日は1日あたり [Constants.standardWorkHoursPerDay] を超えた分、
+  /// 休日の出勤は働いた時間の全部を数える。
   final double overtimeHours;
 
   /// 有休使用日数。全日は 1.0、半日は 0.5 として数える。
@@ -40,11 +44,7 @@ class MonthlySummary {
 
     double overtime = 0;
     monthlyTimecard.dailyTimecards.forEach((day, dailyTimecard) {
-      final double excess =
-          dailyTimecard.elapsedTime - Constants.standardWorkHoursPerDay;
-      if (excess > 0) {
-        overtime += excess;
-      }
+      overtime += _overtimeOf(dailyTimecard);
     });
 
     return MonthlySummary(
@@ -54,6 +54,23 @@ class MonthlySummary {
       overtimeHours: overtime,
       paidHolidayDays: _countPaidHolidayDays(attendDataList, year, month),
     );
+  }
+
+  /// その日の残業時間。
+  ///
+  /// 休日の出勤は所定労働時間の枠外なので、働いた時間をそのまま残業とする。
+  /// 平日は所定労働時間を超えた分だけを数える。
+  ///
+  /// 休日かどうかは [DailyTimecard.isHoliday] の判定に従う。
+  /// 土日に加えて、カレンダーに予定のある日（祝日・会社の休日）も休日になる。
+  static double _overtimeOf(DailyTimecard dailyTimecard) {
+    if (dailyTimecard.isHoliday) {
+      return dailyTimecard.elapsedTime;
+    }
+
+    final double excess =
+        dailyTimecard.elapsedTime - Constants.standardWorkHoursPerDay;
+    return excess > 0 ? excess : 0;
   }
 
   /// 有休の日数を数える。
