@@ -15,10 +15,12 @@ import '../../application/constants.dart';
 import '../../models/attend_data.dart';
 import '../../models/daily_timecard.dart';
 import '../../models/encoder.dart';
+import '../../models/punch_sequence.dart';
 import '../../models/timecard_data.dart';
 import '../../services/attendance_service.dart';
 import '../components/data_table_view.dart';
 import '../components/dialogs/error_dialog.dart';
+import '../components/dialogs/punch_input_dialog.dart';
 import '../components/my_app_bar.dart';
 
 class TimecardPage extends StatefulWidget {
@@ -58,9 +60,20 @@ class _TimecardPageState extends State<TimecardPage> {
 
   late bool _isLoading;
 
+  /// 表のデータ列。CSV の見出しにもそのまま使うので、
+  /// 操作用の「編集」列はここには含めない。
   List<String> get _columnNames {
     return ['日付', '出勤', '退勤', '時間', '備考'];
   }
+
+  /// 打刻を追加するボタンを置く列。
+  static const String _editColumnName = '編集';
+
+  /// 日付列を含めた表全体の列数。
+  int get _columnCount => _columnNames.length + 1;
+
+  /// その月の生データ。打刻の重複判定に使うので保持しておく。
+  List<AttendData> _attendDataList = [];
 
   @override
   void initState() {
@@ -87,7 +100,7 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   List<ExpandableTableHeader> _createHeaders() {
-    final List<String> labels = _columnNames.sublist(1);
+    final List<String> labels = [..._columnNames.sublist(1), _editColumnName];
     final TextStyle? style = Theme.of(context).textTheme.bodyMedium;
 
     List<ExpandableTableHeader> headers = [];
@@ -155,6 +168,7 @@ class _TimecardPageState extends State<TimecardPage> {
       clockOutTime,
       elapsedTime,
       remarks,
+      _createEditCell(timecard, color),
     ];
 
     List<ExpandableTableRow> children = [];
@@ -187,9 +201,28 @@ class _TimecardPageState extends State<TimecardPage> {
 
     var row = ExpandableTableRow(
         firstCell: DataTableView.buildCell(nil, color: color),
-        cells: [clockInTime, clockOutTime, elapsedTime, remarks]);
+        cells: [
+          clockInTime,
+          clockOutTime,
+          elapsedTime,
+          remarks,
+          // 編集は日付の行にだけ置く。内訳の行では列数を合わせるだけ。
+          DataTableView.buildCell(nil, color: color),
+        ]);
 
     return row;
+  }
+
+  /// 打刻を追加するボタン。
+  ExpandableTableCell _createEditCell(DailyTimecard timecard, Color color) {
+    return DataTableView.buildCell(
+      IconButton(
+        icon: const Icon(Icons.edit),
+        tooltip: '打刻を追加',
+        onPressed: _isLoading ? null : () => _addPunch(timecard),
+      ),
+      color: color,
+    );
   }
 
   ExpandableTableRow _createSum(MonthlyTimecard monthlyTimecard) {
@@ -205,9 +238,81 @@ class _TimecardPageState extends State<TimecardPage> {
     var row = ExpandableTableRow(
         firstCell:
             DataTableView.buildCell(Text('計', style: style), color: color),
-        cells: [clockInTime, clockOutTime, elapsedTime, remarks]);
+        cells: [
+          clockInTime,
+          clockOutTime,
+          elapsedTime,
+          remarks,
+          DataTableView.buildCell(nil, color: color),
+        ]);
 
     return row;
+  }
+
+  /// その日に打刻を追加する。
+  ///
+  /// 既存の打刻の時刻は変えられない。GAS の updateById が status しか
+  /// 更新しないため、時刻の修正はホーム画面でその日を開いて削除し、
+  /// 入れ直す操作になる。
+  Future<void> _addPunch(DailyTimecard timecard) async {
+    AttendData? data = await showDialog<AttendData?>(
+        context: context,
+        builder: (_) {
+          return PunchInputDialog(
+            name: _name,
+            date: timecard.date,
+            clockInTimeStr: timecard.clockInTimeStr,
+            clockOutTimeStr: timecard.clockOutTimeStr,
+          );
+        });
+
+    if (data == null || !mounted) {
+      return;
+    }
+
+    // ホーム画面の打刻ボタンと同じ基準で重ならないか確かめる。
+    String? conflict = PunchSequence.findConflict(
+      dataList: _attendDataList,
+      name: _name,
+      type: data.type,
+      dateTime: data.dateTime,
+    );
+    if (conflict != null) {
+      await ErrorDialog.showMessage(context,
+          title: '打刻できません', content: conflict);
+      return;
+    }
+
+    String sheetId = _service.getSheetId(data.dateTime);
+    String sheetName = _service.getSheetName(data.dateTime);
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // insertRows はその日ぶんしか返さないので、表の作り直しには使えない。
+      // 追加後に月ぶんを取り直す。
+      await _service.setAttendData(sheetId, sheetName, data);
+      List<AttendData> result =
+          await _service.getByName(sheetId, sheetName, _name);
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _updateTimecard(result);
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      ErrorDialog.showErrorDialog(context, e);
+    }
   }
 
   Future<void> _getByName(String name, DateTime dateTime) async {
@@ -241,6 +346,7 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   void _updateTimecard(List<AttendData> dataList) {
+    _attendDataList = dataList;
     _monthlyTimecard = _service.createMonthlyTimecard(
         _name, _selectedDate.year, _selectedDate.month, dataList);
   }
@@ -358,10 +464,12 @@ class _TimecardPageState extends State<TimecardPage> {
                                 firstHeaderCell: _createFirstHeaderCell(),
                                 headers: _createHeaders(),
                                 rows: _createRows(),
+                                // 列数から幅を割り出す。固定比率のままだと
+                                // 編集列を足したときに画面からはみ出す。
                                 firstColumnWidth:
-                                    max(120, constraints.maxWidth * 0.2),
+                                    max(110, constraints.maxWidth / _columnCount),
                                 defaultsColumnWidth:
-                                    max(120, constraints.maxWidth * 0.2),
+                                    max(110, constraints.maxWidth / _columnCount),
                                 headerHeight: 60,
                                 defaultsRowHeight: 60,
                                 isLoading: _isLoading)),

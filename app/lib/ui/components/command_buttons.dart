@@ -1,9 +1,10 @@
 import 'package:attendance_manager/ui/components/dialogs/paid_holiday_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 
 import '../../application/constants.dart';
 import '../../models/attend_data.dart';
+import '../../models/punch_sequence.dart';
 import '../../services/attendance_service.dart';
 import '../../services/gas_client.dart';
 import '../pages/timecard_page.dart';
@@ -136,48 +137,12 @@ class _CommandButtonsState extends State<CommandButtons> {
   /// 打刻ダイアログで変更できるのは時刻だけで、日付は表示中の日から動かない。
   /// そのため画面が持っているその日のデータだけで判定できる。
   String? _findSequenceConflict(AttendType type, DateTime dateTime) {
-    // 有休は出退勤の並びとは独立しているので対象外。
-    if (type != AttendType.clockIn && type != AttendType.clockOut) {
-      return null;
-    }
-
-    List<AttendData> sequence = widget.dataList
-        .where((AttendData data) =>
-            data.name == widget.name &&
-            (data.type == AttendType.clockIn ||
-                data.type == AttendType.clockOut))
-        .toList()
-      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-    // 時刻を選び直して既存の打刻の間に入れることもできるため、
-    // 直前だけでなく直後も確認する。
-    AttendData? previous;
-    AttendData? next;
-    for (AttendData data in sequence) {
-      if (data.dateTime.isAfter(dateTime)) {
-        next ??= data;
-      } else {
-        previous = data;
-      }
-    }
-
-    AttendData? conflict;
-    if (previous != null && previous.type == type) {
-      conflict = previous;
-    } else if (next != null && next.type == type) {
-      conflict = next;
-    }
-
-    if (conflict == null) {
-      return null;
-    }
-
-    String time = DateFormat('HH:mm').format(conflict.dateTime);
-    String required = type == AttendType.clockIn
-        ? AttendType.clockOut.toStr
-        : AttendType.clockIn.toStr;
-
-    return '$time に${type.toStr}が記録されています。\n先に$requiredを記録してください。';
+    return PunchSequence.findConflict(
+      dataList: widget.dataList,
+      name: widget.name,
+      type: type,
+      dateTime: dateTime,
+    );
   }
 
   Future<void> _manualInput(AttendType type) async {
