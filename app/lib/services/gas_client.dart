@@ -160,6 +160,35 @@ class GasClient {
     });
   }
 
+  /// この端末を共有端末にするか、特定の人の端末にするかを切り替える。
+  ///
+  /// 名義の変更は所持者の権限に直結するので、その人のパスワードで本人確認する。
+  /// パスワードが違う場合は false を返す。
+  Future<bool> updateDeviceOwner(
+    String name,
+    String password, {
+    required bool shared,
+  }) async {
+    try {
+      final dynamic result = await _send({
+        'action': 'updateDeviceOwner',
+        'name': name,
+        'password': password,
+        'shared': shared,
+        'deviceToken': _device.token,
+      });
+
+      final Map<String, dynamic> map = result as Map<String, dynamic>;
+      _device.save(_device.token!, map['user'] as String?);
+      return true;
+    } on GasException catch (e) {
+      if (e.code == 'invalid_credentials') {
+        return false;
+      }
+      rethrow;
+    }
+  }
+
   /// 端末登録を解除する。サーバー側で revoke された場合にも使う。
   void clearDevice() {
     _device.clear();

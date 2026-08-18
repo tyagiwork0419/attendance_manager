@@ -39,6 +39,16 @@ class AttendanceService {
     _gasClient.clearDevice();
   }
 
+  /// この端末を共有端末にするか、特定の人の端末にするかを切り替える。
+  /// パスワードが違う場合は false を返す。
+  Future<bool> updateDeviceOwner(
+    String name,
+    String password, {
+    required bool shared,
+  }) {
+    return _gasClient.updateDeviceOwner(name, password, shared: shared);
+  }
+
   /// パスワードを変更する。失敗時は [GasException] を投げる。
   Future<void> changePassword(
     String name, {

@@ -38,7 +38,7 @@ var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
  * 端末トークンに加えて、現在のパスワードによる本人確認を行う操作。
  * セッショントークンは使わない（変更前のパスワードそのものが本人確認になる）。
  */
-var ACCOUNT_ACTIONS = ['changePassword'];
+var ACCOUNT_ACTIONS = ['changePassword', 'updateDeviceOwner'];
 
 /**
  * 新しいパスワードの最低文字数。
@@ -105,10 +105,14 @@ function doPost(e) {
       return fail_('この端末は登録されていません', 'device_unauthorized');
     }
 
-    // パスワード変更は現在のパスワードで本人確認するため、
+    // パスワード変更と端末の名義変更は、パスワードそのもので本人確認するため、
     // PERSONAL_ACTIONS のセッション判定は経由しない。
     if (action === 'changePassword') {
       return handleChangePassword_(req);
+    }
+
+    if (action === 'updateDeviceOwner') {
+      return handleUpdateDeviceOwner_(req);
     }
 
     if (isPersonalAction) {
@@ -492,6 +496,50 @@ function handleRegisterDevice_(req) {
   ]);
 
   return ok_({ token: token, user: shared ? '' : name, shared: shared });
+}
+
+/**
+ * この端末を共有端末にするか、特定の人の端末にするかを切り替える。
+ *
+ * 名義を変えると、その人のタイムカードをパスワードなしで開けるように
+ * なってしまうため、必ずその人のパスワードで本人確認する。
+ * 共有端末に戻す場合も同じ確認を通す（誰でも他人の端末の設定を
+ * 変えられると、締め出しに使えてしまうため）。
+ */
+function handleUpdateDeviceOwner_(req) {
+  var name = req.name;
+  var password = req.password;
+  var shared = req.shared === true;
+
+  if (!name || !password) {
+    return fail_('名前とパスワードを入力してください', 'invalid_credentials');
+  }
+
+  var record = loadUserRecord_(name);
+  var expected = record ? record.password : '';
+  if (!record || !timingSafeEqual_(String(password), expected)) {
+    return fail_('名前またはパスワードが違います', 'invalid_credentials');
+  }
+
+  var hash = sha256Hex_(req.deviceToken);
+  var sheet = devicesSheet_();
+  var values = sheet.getDataRange().getValues();
+  var col = deviceColumnIndexes_(values[0]);
+
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][col.tokenHash]).trim() !== hash) {
+      continue;
+    }
+
+    sheet.getRange(i + 1, col.user + 1).setValue(shared ? '' : name);
+
+    // 判定結果をキャッシュしているので、消さないと最大60秒古い名義のままになる。
+    CacheService.getScriptCache().remove('device:' + hash);
+
+    return ok_({ user: shared ? '' : name, shared: shared });
+  }
+
+  return fail_('この端末は登録されていません', 'device_unauthorized');
 }
 
 // ---------------------------------------------------------------------------
