@@ -55,7 +55,7 @@ var MIN_PASSWORD_LENGTH = 6;
  * 共有端末（user が空）や他人の分を見る場合は、その人のパスワードで
  * ログインして得たセッショントークンが要る。
  */
-var PERSONAL_ACTIONS = ['selectByName'];
+var PERSONAL_ACTIONS = ['selectByName', 'selectByNameForYear'];
 
 // ---------------------------------------------------------------------------
 // エントリポイント
