@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../application/ja_am_pm_localizations.dart';
 import '../../../models/attend_data.dart';
 
 extension TimeOfDayConverter on TimeOfDay {
@@ -94,13 +95,15 @@ class _DateTimePickerDialogState extends State<DateTimePickerDialog> {
                         context: context,
                         initialTime: _time,
                         initialEntryMode: TimePickerEntryMode.dial,
-                        /*builder: (context, child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(context)
-                                  .copyWith(alwaysUse24HourFormat: false),
-                              child: child!,
-                            );
-                          }*/
+                        // AM / PM で選べるようにする。ja の標準表記は24時間制なので、
+                        // 時刻ピッカーの間だけローカライズを差し替える。
+                        builder: (context, child) => Localizations.override(
+                          context: context,
+                          delegates: const [
+                            JaAmPmMaterialLocalizations.delegate
+                          ],
+                          child: child,
+                        ),
                       );
                       if (picked == null) {
                         return;

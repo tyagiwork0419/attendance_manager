@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../application/ja_am_pm_localizations.dart';
 import '../../../models/attend_data.dart';
 
 /// タイムカードから、その日の打刻を追加するダイアログ。
@@ -65,6 +66,13 @@ class _PunchInputDialogState extends State<PunchInputDialog> {
       context: context,
       initialTime: _time,
       initialEntryMode: TimePickerEntryMode.dial,
+      // AM / PM で選べるようにする。ja の標準表記は24時間制なので、
+      // 時刻ピッカーの間だけローカライズを差し替える。
+      builder: (context, child) => Localizations.override(
+        context: context,
+        delegates: const [JaAmPmMaterialLocalizations.delegate],
+        child: child,
+      ),
     );
     if (picked == null) {
       return;
