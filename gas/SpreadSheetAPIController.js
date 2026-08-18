@@ -237,6 +237,39 @@ class SpreadSheetAPIController {
     }
   }
 
+  /**
+   * 1年分（ファイル内の全シート）をまとめて返す。
+   *
+   * 集計ページは12か月ぶんを必要とするが、月ごとに呼ぶと往復が12回になる。
+   * ここでまとめることで1回で済ませる。
+   *
+   * _initDB は月シートが無いとテンプレートから作ってしまうため使わない。
+   * 実在するシートだけを読む。
+   */
+  selectByNameForYear(e) {
+    try {
+      let sheetId = this._getSheetID(FOLDER_ID, e.fileName);
+      let spreadsheet = SpreadsheetApp.openById(sheetId);
+      let sheets = spreadsheet.getSheets();
+
+      let dataList = [];
+      for (let i = 0; i < sheets.length; ++i) {
+        let sheetName = sheets[i].getName();
+        if (sheetName == TEMPLATE_SHEET_NAME) {
+          continue;
+        }
+
+        let db = this._makeTargetSpreadSheetDatabase(sheetId, sheetName);
+        dataList = dataList.concat(this._selectByName(db, e.name));
+      }
+
+      return this._makeResponse(dataList);
+    } catch (error) {
+      console.error('selectByNameForYear error: ' + error);
+      throw error;
+    }
+  }
+
   selectByName(e) {
     try {
       let db = this._initDB(e);

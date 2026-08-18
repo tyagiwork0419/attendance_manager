@@ -19,6 +19,10 @@ class Constants {
   static const double paddingMiddium = 10;
   static const String locale = 'ja';
 
+  /// 1日の所定労働時間。これを超えた分を残業として集計する。
+  /// 就業規則が変わったらここを直す。
+  static const double standardWorkHoursPerDay = 8;
+
   static const EdgeInsets topBottomPadding = EdgeInsets.fromLTRB(
       0, Constants.paddingMiddium, 0, Constants.paddingMiddium);
   static const EdgeInsets allPadding = EdgeInsets.all(Constants.paddingMiddium);

@@ -22,6 +22,7 @@ import '../components/data_table_view.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/dialogs/punch_input_dialog.dart';
 import '../components/my_app_bar.dart';
+import 'summary_page.dart';
 
 class TimecardPage extends StatefulWidget {
   final AttendanceService service;
@@ -373,12 +374,33 @@ class _TimecardPageState extends State<TimecardPage> {
 
   Widget _monthButton() {
     return Center(
-        child: ElevatedButton(
-      child: Text(_yearMonthFormat.format(_selectedDate)),
-      onPressed: () {
-        _selectMonth();
-      },
-    ));
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton(
+            child: Text(_yearMonthFormat.format(_selectedDate)),
+            onPressed: () {
+              _selectMonth();
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _openSummary,
+              child: const Text('集計データ'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openSummary() {
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SummaryPage(
+                service: _service, name: _name, dateTime: _selectedDate)));
   }
 
   Future<void> _exportData() async {

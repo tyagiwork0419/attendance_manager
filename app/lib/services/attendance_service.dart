@@ -134,6 +134,29 @@ class AttendanceService {
     return result;
   }
 
+  /// 1年分をまとめて取得する。集計ページ用。
+  ///
+  /// 月ごとに呼ぶと往復が12回になるため、GAS 側でまとめてもらう。
+  Future<List<AttendData>> getByNameForYear(
+      String fileName, String name) async {
+    debugPrint('getByNameForYear');
+    Map<String, Object> parameters = {
+      'fileName': fileName,
+      'name': name,
+    };
+
+    var jsonResult = await _gasClient.post('selectByNameForYear', parameters);
+    List<dynamic> jsonObj = json.decode(jsonResult);
+
+    var result = _parseAttendDataFromJson(jsonObj);
+
+    // 出退勤の対応付けは並び順に依存するので、月をまたいでも時系列に整える。
+    result.sort((a, b) {
+      return a.dateTime.compareTo(b.dateTime);
+    });
+    return result;
+  }
+
   Future<List<AttendData>> updateById(
       String fileName, String sheetName, AttendData data) async {
     debugPrint('updateById');

@@ -85,3 +85,9 @@ function getInitializeData(e){
 
   return result;
 }
+
+function selectByNameForYear(e){
+  initControllers_();
+  result = controller.selectByNameForYear(e);
+  return result;
+}
