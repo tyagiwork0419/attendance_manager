@@ -72,7 +72,17 @@ function updateById(e){
 
 function getEvents(e){
   initControllers_();
-  result = calendarController.getEvents();
+
+  // タイムカードも集計もデータのある年をすべて表示できるので、
+  // 祝日を同じ範囲ぶん取る。一覧が取れなくてもカレンダー自体は返す。
+  let years = [];
+  try {
+    years = JSON.parse(controller.listYears());
+  } catch (error) {
+    console.warn('listYears に失敗したため現在の年まわりだけ取ります: ' + error);
+  }
+
+  result = calendarController.getEvents(years);
   return result;
 }
 

@@ -250,11 +250,15 @@ class SpreadSheetAPIController {
     let folder = DriveApp.getFolderById(FOLDER_ID);
     let files = folder.getFiles();
 
+    // 同じ名前のファイルが複数あることがあるので重複は除く。
     let years = [];
     while (files.hasNext()) {
       let matched = files.next().getName().match(/^(\d{4})年$/);
       if (matched) {
-        years.push(Number(matched[1]));
+        let year = Number(matched[1]);
+        if (years.indexOf(year) < 0) {
+          years.push(year);
+        }
       }
     }
 

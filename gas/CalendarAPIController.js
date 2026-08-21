@@ -1,11 +1,28 @@
-// 取得する年の範囲。現在の年を基準に前後何年ぶんを見るか。
-// アプリの日付ピッカーが「今年 ±1年」を選べる（my_home_page.dart）ので、それに合わせている。
-const CALENDAR_YEARS_BACK = 1;
+// 先取りしておく年数。予定の入力が翌年ぶんまで進んでいても拾えるようにする。
+// 過去側は「データのある年」から決めるので、ここでは指定しない。
 const CALENDAR_YEARS_FORWARD = 1;
 
 class CalendarAPIController{
   constructor(useMock = false){
     this._useMock = useMock;
+  }
+
+  /**
+   * 取得する年の範囲を決める。
+   *
+   * データのある年をすべて含め、現在の年と、その先取りぶんも足す。
+   * 年の一覧が取れなかった場合でも、現在の年まわりは返せるようにする。
+   */
+  _yearRange(years){
+    let currentYear = new Date().getFullYear();
+
+    let candidates = (years || []).slice();
+    candidates.push(currentYear);
+
+    let start = Math.min.apply(null, candidates);
+    let end = Math.max.apply(null, candidates.concat([currentYear + CALENDAR_YEARS_FORWARD]));
+
+    return { start: start, end: end };
   }
 
   _getCalendars(){
@@ -43,16 +60,23 @@ class CalendarAPIController{
     return calendars;
   }
 
-  getEvents(){
+  /**
+   * 祝日・会社の休日を返す。
+   *
+   * [years] は勤怠データのある年の一覧。タイムカードも集計もその範囲を
+   * すべて表示できるので、祝日も同じ範囲ぶん揃えておく必要がある。
+   * 抜けている年があると、その年の祝日が平日として扱われ、
+   * 集計の所定労働時間が過大になる。
+   */
+  getEvents(years){
     console.log('getEvents');
     let calendars = this._getCalendars();
     let events = []
 
-    // 現在の年を基準にした範囲。以前は 2023 年で固定されており、
-    // 年が変わると祝日が一切返らなくなっていた。
-    let currentYear = new Date().getFullYear();
-    let startDate = new Date(currentYear - CALENDAR_YEARS_BACK, 0, 1);
-    let endDate = new Date(currentYear + CALENDAR_YEARS_FORWARD + 1, 0, 1);
+    let range = this._yearRange(years);
+    let startDate = new Date(range.start, 0, 1);
+    let endDate = new Date(range.end + 1, 0, 1);
+    console.log('calendar range: ' + range.start + ' - ' + range.end);
 
     for(let i=0; i<calendars.length; ++i){
       let calendar = calendars[i];
