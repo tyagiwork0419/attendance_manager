@@ -287,7 +287,11 @@ class SpreadSheetAPIController {
       let dataList = [];
       for (let i = 0; i < sheets.length; ++i) {
         let sheetName = sheets[i].getName();
-        if (sheetName == TEMPLATE_SHEET_NAME) {
+
+        // 月シートだけを読む。古い年のファイルには打刻以外のシートが
+        // 混じっていることがあり、そのまま読むと列が合わずに失敗する。
+        if (!this._isMonthSheet(sheetName)) {
+          console.log('月シートではないため読み飛ばします: ' + sheetName);
           continue;
         }
 
@@ -300,6 +304,16 @@ class SpreadSheetAPIController {
       console.error('selectByNameForYear error: ' + error);
       throw error;
     }
+  }
+
+  /**
+   * 打刻を入れる月シートかどうか。
+   *
+   * 月シートの名前は getSheetName が作る「8月」の形。
+   * template や、古いファイルに残っている作業用シートを除くために使う。
+   */
+  _isMonthSheet(sheetName) {
+    return /^([1-9]|1[0-2])月$/.test(String(sheetName).trim());
   }
 
   selectByName(e) {
