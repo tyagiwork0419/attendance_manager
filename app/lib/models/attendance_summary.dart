@@ -11,10 +11,9 @@ class MonthlySummary {
   /// 総労働時間。休憩を差し引いた実働の合計。
   final double workHours;
 
-  /// 総残業時間。
+  /// 総残業時間。総労働時間から、その月の所定労働時間を引いた値。
   ///
-  /// 平日は1日あたり [Constants.standardWorkHoursPerDay] を超えた分、
-  /// 休日の出勤は働いた時間の全部を数える。
+  /// 所定に届かなかった月は負になる。算出の詳細は [_overtime] を参照。
   final double overtimeHours;
 
   /// 有休使用日数。全日は 1.0、半日は 0.5 として数える。
@@ -28,8 +27,10 @@ class MonthlySummary {
     required this.paidHolidayDays,
   });
 
-  bool get isEmpty =>
-      workHours == 0 && overtimeHours == 0 && paidHolidayDays == 0;
+  /// その月に記録が何も無いか。
+  ///
+  /// 残業時間は所定労働時間に届かないと負になるので、判定には使わない。
+  bool get isEmpty => workHours == 0 && paidHolidayDays == 0;
 
   /// [monthlyTimecard] と、その月の生データから集計を組み立てる。
   ///
@@ -42,35 +43,55 @@ class MonthlySummary {
     final int year = monthlyTimecard.date.year;
     final int month = monthlyTimecard.date.month;
 
-    double overtime = 0;
-    monthlyTimecard.dailyTimecards.forEach((day, dailyTimecard) {
-      overtime += _overtimeOf(dailyTimecard);
-    });
+    final double workHours = monthlyTimecard.sumOfElapsedTime;
+    final double paidHolidayDays =
+        _countPaidHolidayDays(attendDataList, year, month);
 
     return MonthlySummary(
       year: year,
       month: month,
-      workHours: monthlyTimecard.sumOfElapsedTime,
-      overtimeHours: overtime,
-      paidHolidayDays: _countPaidHolidayDays(attendDataList, year, month),
+      workHours: workHours,
+      overtimeHours: _overtime(monthlyTimecard, workHours, paidHolidayDays),
+      paidHolidayDays: paidHolidayDays,
     );
   }
 
-  /// その日の残業時間。
+  /// 総労働時間から、その月の所定労働時間を差し引いた値。
   ///
-  /// 休日の出勤は所定労働時間の枠外なので、働いた時間をそのまま残業とする。
-  /// 平日は所定労働時間を超えた分だけを数える。
+  ///     総労働時間 − 休日以外の日数 × [Constants.standardWorkHoursPerDay]
+  ///
+  /// 休日は差し引く日数に入らないので、休日に働いた時間はそのまま残る。
+  ///
+  /// 所定労働時間に届かなかった月は負の値になる。有休を取った日も
+  /// 「休日以外の日数」に数えるため、有休の多い月は負に振れる。
+  ///
+  /// 記録が何も無い月だけは 0 にする。そうしないと、まだ来ていない月まで
+  /// 所定労働時間ぶんの不足として並んでしまう。
+  static double _overtime(
+    MonthlyTimecard monthlyTimecard,
+    double workHours,
+    double paidHolidayDays,
+  ) {
+    if (workHours == 0 && paidHolidayDays == 0) {
+      return 0;
+    }
+
+    return workHours -
+        _workingDaysOf(monthlyTimecard) * Constants.standardWorkHoursPerDay;
+  }
+
+  /// その月の休日以外の日数。
   ///
   /// 休日かどうかは [DailyTimecard.isHoliday] の判定に従う。
   /// 土日に加えて、カレンダーに予定のある日（祝日・会社の休日）も休日になる。
-  static double _overtimeOf(DailyTimecard dailyTimecard) {
-    if (dailyTimecard.isHoliday) {
-      return dailyTimecard.elapsedTime;
-    }
-
-    final double excess =
-        dailyTimecard.elapsedTime - Constants.standardWorkHoursPerDay;
-    return excess > 0 ? excess : 0;
+  static int _workingDaysOf(MonthlyTimecard monthlyTimecard) {
+    int days = 0;
+    monthlyTimecard.dailyTimecards.forEach((day, DailyTimecard dailyTimecard) {
+      if (!dailyTimecard.isHoliday) {
+        days++;
+      }
+    });
+    return days;
   }
 
   /// 有休の日数を数える。
