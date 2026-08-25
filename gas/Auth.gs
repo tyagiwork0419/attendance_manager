@@ -212,10 +212,12 @@ function sessionKey_(token) {
 // ---------------------------------------------------------------------------
 //
 // シート構成:
-//   id | name | password
+//   id | name | password | role
 //
 // ユーザーの追加・変更はスプレッドシートを直接編集する。
 // 列は見出し行の名前で解決するため、列順が変わっても動作する。
+// role 列は省略可能。値が "admin" のユーザーだけが管理者として扱われ、
+// それ以外（空欄・"user" など）は一般利用者になる。
 //
 // このシートはサーバー側でのみ読まれ、クライアントには名前しか渡らない。
 
@@ -225,9 +227,12 @@ var USERS_SHEET_NAME = 'users';
 
 var COLUMN_NAME = 'name';
 var COLUMN_PASSWORD = 'password';
+var COLUMN_ROLE = 'role';
+
+var ROLE_ADMIN = 'admin';
 
 /**
- * users シートを読み、[{name, password}] を返す。
+ * users シートを読み、[{name, password, role}] を返す。
  *
  * パスワードが数値のみの場合 Sheets は number として返すため、
  * 比較前に必ず文字列化する。なお number 化により先頭の 0 は失われる
@@ -250,6 +255,7 @@ function loadUsers_() {
   });
   var nameIndex = header.indexOf(COLUMN_NAME);
   var passwordIndex = header.indexOf(COLUMN_PASSWORD);
+  var roleIndex = header.indexOf(COLUMN_ROLE);
 
   if (nameIndex < 0 || passwordIndex < 0) {
     throw new Error(
@@ -263,12 +269,19 @@ function loadUsers_() {
     if (!name) {
       continue;
     }
+    var role = roleIndex < 0 ? '' : String(values[i][roleIndex]).trim().toLowerCase();
     users.push({
       name: name,
-      password: String(values[i][passwordIndex]).trim()
+      password: String(values[i][passwordIndex]).trim(),
+      role: role
     });
   }
   return users;
+}
+
+/** 管理者かどうか。role 列が無い・空のユーザーは一般利用者として扱う。 */
+function isAdmin_(userRecord) {
+  return !!userRecord && userRecord.role === ROLE_ADMIN;
 }
 
 /** ログイン画面に出す名前の一覧。パスワードは一切返さない。 */
@@ -468,6 +481,9 @@ function touchDeviceLastUsed_(sheet, rowNumber, columnIndex, current) {
 /**
  * 端末を登録する。登録には既存ユーザーのパスワードが必要。
  * 発行したトークンはこの応答でしか返さない（サーバーはハッシュしか保持しない）。
+ *
+ * 共有端末としての登録（shared: true）は管理者のみ許可する。
+ * 個人名義での登録（shared: false）は誰でもできる。
  */
 function handleRegisterDevice_(req) {
   var name = req.name;
@@ -483,8 +499,12 @@ function handleRegisterDevice_(req) {
     return fail_('名前またはパスワードが違います', 'invalid_credentials');
   }
 
-  var token = Utilities.getUuid() + Utilities.getUuid();
   var shared = req.shared === true;
+  if (shared && !isAdmin_(record)) {
+    return fail_('共有端末への登録は管理者のみ行えます', 'admin_required');
+  }
+
+  var token = Utilities.getUuid() + Utilities.getUuid();
 
   devicesSheet_().appendRow([
     sha256Hex_(token),
@@ -505,6 +525,9 @@ function handleRegisterDevice_(req) {
  * なってしまうため、必ずその人のパスワードで本人確認する。
  * 共有端末に戻す場合も同じ確認を通す（誰でも他人の端末の設定を
  * 変えられると、締め出しに使えてしまうため）。
+ *
+ * 共有端末への切り替え（shared: true）はさらに管理者のみ許可する。
+ * 個人名義に戻す（shared: false）のは本人確認さえ取れれば誰でもできる。
  */
 function handleUpdateDeviceOwner_(req) {
   var name = req.name;
@@ -519,6 +542,10 @@ function handleUpdateDeviceOwner_(req) {
   var expected = record ? record.password : '';
   if (!record || !timingSafeEqual_(String(password), expected)) {
     return fail_('名前またはパスワードが違います', 'invalid_credentials');
+  }
+
+  if (shared && !isAdmin_(record)) {
+    return fail_('共有端末への変更は管理者のみ行えます', 'admin_required');
   }
 
   var hash = sha256Hex_(req.deviceToken);

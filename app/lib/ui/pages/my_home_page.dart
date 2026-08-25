@@ -58,7 +58,16 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> _userNames = [];
 
   int _choiceIndex = 0;
+
+  /// この端末が個人名義かどうか。個人名義なら打刻対象はその人に固定され、
+  /// 名前選択ボタンは表示しない（共有端末でのみ選ばせる）。
+  bool get _isPersonalDevice => _attendanceService.deviceUser != null;
+
   String get _chooseName {
+    final String? deviceUser = _attendanceService.deviceUser;
+    if (deviceUser != null) {
+      return deviceUser;
+    }
     if (_choiceIndex >= _userNames.length) {
       return '';
     }
@@ -595,7 +604,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPickDate: _onPickDate,
                   onGetResults: _onGetResults,
                   onError: _onError),
-            Padding(padding: Constants.allPadding, child: _nameButtons())
+            // 個人名義の端末は打刻対象が固定されるため、選択ボタンは不要。
+            if (!_isPersonalDevice)
+              Padding(padding: Constants.allPadding, child: _nameButtons())
           ])),
         )));
   }

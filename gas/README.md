@@ -142,15 +142,30 @@ docker compose run --rm clasp push
 
 [対象スプレッドシート](https://docs.google.com/spreadsheets/d/1P3nX1XmpVqBLCB-BVgOGWG_U6a6vSr58YXeesvDvs68/edit)
 
-| id | name | password |
-|---|---|---|
-| 1 | 八木 | 1111 |
-| 2 | 大滝 | … |
+| id | name | password | role |
+|---|---|---|---|
+| 1 | 八木 | 1111 | admin |
+| 2 | 大滝 | … | |
 
 - 追加・変更・削除はシートの行を編集するだけ。再デプロイは不要
 - 列は**見出し行の名前で解決**するため、列順を変えても動作する
 - `name` が空の行は無視される
 - シートはサーバー側でのみ読まれ、クライアントには**名前しか渡らない**
+- `role` 列は省略可能。値が `admin` の行だけ管理者として扱われ、
+  それ以外（空欄・`user` など）は一般利用者になる
+
+### 管理者ロール
+
+管理者（`role` が `admin`）だけが、端末を**共有端末**にできる
+（端末登録画面の「共有端末として登録する」、右上メニュー → 端末の設定の
+「共有端末として使う」）。一般利用者がこれらのチェックを付けて送信すると
+サーバーが `admin_required` で拒否する。
+
+共有端末から個人名義に戻す操作（本人確認込み）は誰でもできる。
+制限されるのは「共有端末にする」方向だけ。
+
+個人名義の端末では、打刻対象の名前は自動的にその端末の名義になり、
+画面下部の名前選択ボタンは表示されない（共有端末でのみ表示される）。
 
 スプレッドシート ID とシート名は [Auth.gs](Auth.gs) の
 `USERS_SPREADSHEET_ID` / `USERS_SHEET_NAME` で変更できる。
@@ -355,8 +370,8 @@ GAS 側は `e.postData.contents` から本文を読むため、この指定で�
 { "ok": false, "error": "ログインが必要です", "code": "unauthorized" }
 ```
 
-`code` の値: `invalid_credentials` / `unauthorized` / `unknown_action` /
-`no_action` / `empty_request` / `internal_error`
+`code` の値: `invalid_credentials` / `unauthorized` / `admin_required` /
+`unknown_action` / `no_action` / `empty_request` / `internal_error`
 
 ## アクセス制御
 
