@@ -25,13 +25,26 @@ class MyHomePage extends StatefulWidget {
       {super.key,
       required this.title,
       required this.attendanceService,
-      required this.onDeviceRevoked});
+      required this.onDeviceRevoked,
+      this.initialDate,
+      this.fixedName});
 
   final String title;
   final AttendanceService attendanceService;
 
   /// 端末が失効していた場合に呼ばれる。登録画面へ戻すために使う。
   final VoidCallback onDeviceRevoked;
+
+  /// 開いたときに表示する日付。省略時は今日。
+  ///
+  /// タイムカードの編集ボタンから特定の日を開くために使う。
+  final DateTime? initialDate;
+
+  /// 打刻対象をこの名前に固定する。指定時は名前選択ボタンも出さない。
+  ///
+  /// タイムカードから開く場合、そのタイムカードの持ち主で固定したいため
+  /// （共有端末の名前選択に頼ると、押し間違えて別人の分に打刻できてしまう）。
+  final String? fixedName;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -64,6 +77,9 @@ class _MyHomePageState extends State<MyHomePage> {
   bool get _isPersonalDevice => _attendanceService.deviceUser != null;
 
   String get _chooseName {
+    if (widget.fixedName != null) {
+      return widget.fixedName!;
+    }
     final String? deviceUser = _attendanceService.deviceUser;
     if (deviceUser != null) {
       return deviceUser;
@@ -86,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     DateTime now = DateTime.now();
     _clockDate = now;
-    _selectedDate = now;
+    _selectedDate = widget.initialDate ?? now;
     _isLoading = false;
 
     Timer.periodic(Constants.wait100Milliseconds, (Timer timer) {
@@ -100,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     _loadUserNames();
-    _getByDateTime(now);
+    _getByDateTime(_selectedDate);
   }
 
   Future<void> _loadUserNames() async {
@@ -603,9 +619,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   dataList: _dataList,
                   onPickDate: _onPickDate,
                   onGetResults: _onGetResults,
-                  onError: _onError),
-            // 個人名義の端末は打刻対象が固定されるため、選択ボタンは不要。
-            if (!_isPersonalDevice)
+                  onError: _onError,
+                  onDeviceRevoked: widget.onDeviceRevoked),
+            // 個人名義の端末、またはタイムカードから開いて打刻対象が
+            // 固定されている場合は、選択ボタンは不要。
+            if (!_isPersonalDevice && widget.fixedName == null)
               Padding(padding: Constants.allPadding, child: _nameButtons())
           ])),
         )));

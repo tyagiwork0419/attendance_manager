@@ -28,6 +28,9 @@ class CommandButtons extends StatefulWidget {
   final void Function(List<AttendData> results)? onGetResults;
   final void Function(Object error)? onError;
 
+  /// タイムカード画面へそのまま引き継ぐ。端末が失効していた場合に呼ばれる。
+  final VoidCallback? onDeviceRevoked;
+
   //final
 
   const CommandButtons(
@@ -42,6 +45,7 @@ class CommandButtons extends StatefulWidget {
     this.onPickDate,
     this.onGetResults,
     this.onError,
+    this.onDeviceRevoked,
   });
 
   @override
@@ -247,7 +251,8 @@ class _CommandButtonsState extends State<CommandButtons> {
                 service: _attendanceService,
                 name: widget.name,
                 dateTime: widget.dateTime,
-                initialData: initialData)));
+                initialData: initialData,
+                onDeviceRevoked: widget.onDeviceRevoked)));
   }
 
   Future<void> _setPaidHoliday() async {

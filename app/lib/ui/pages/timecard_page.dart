@@ -15,13 +15,12 @@ import '../../application/constants.dart';
 import '../../models/attend_data.dart';
 import '../../models/daily_timecard.dart';
 import '../../models/encoder.dart';
-import '../../models/punch_sequence.dart';
 import '../../models/timecard_data.dart';
 import '../../services/attendance_service.dart';
 import '../components/data_table_view.dart';
 import '../components/dialogs/error_dialog.dart';
-import '../components/dialogs/punch_input_dialog.dart';
 import '../components/my_app_bar.dart';
+import 'my_home_page.dart';
 import 'summary_page.dart';
 
 class TimecardPage extends StatefulWidget {
@@ -36,13 +35,18 @@ class TimecardPage extends StatefulWidget {
   /// その結果を受け取って初回の再取得を省く。
   final List<AttendData> initialData;
 
+  /// 端末が失効していた場合に呼ばれる。編集ボタンから開く出退勤入力画面に
+  /// そのまま引き継ぐ。
+  final VoidCallback? onDeviceRevoked;
+
   const TimecardPage(
       {super.key,
       required this.service,
       //required this.title,
       required this.name,
       required this.dateTime,
-      required this.initialData})
+      required this.initialData,
+      this.onDeviceRevoked})
       : title = 'タイムカード ( $name )';
 
   @override
@@ -72,9 +76,6 @@ class _TimecardPageState extends State<TimecardPage> {
 
   /// 日付列を含めた表全体の列数。
   int get _columnCount => _columnNames.length + 1;
-
-  /// その月の生データ。打刻の重複判定に使うので保持しておく。
-  List<AttendData> _attendDataList = [];
 
   /// データのある年。月選択で選べる範囲に使う。
   List<int> _availableYears = [];
@@ -234,13 +235,13 @@ class _TimecardPageState extends State<TimecardPage> {
     return row;
   }
 
-  /// 打刻を追加するボタン。
+  /// その日の出退勤入力画面を開くボタン。
   ExpandableTableCell _createEditCell(DailyTimecard timecard, Color color) {
     return DataTableView.buildCell(
       IconButton(
         icon: const Icon(Icons.edit),
-        tooltip: '打刻を追加',
-        onPressed: _isLoading ? null : () => _addPunch(timecard),
+        tooltip: 'この日の出退勤を編集',
+        onPressed: _isLoading ? null : () => _openDayInput(timecard),
       ),
       color: color,
     );
@@ -270,70 +271,27 @@ class _TimecardPageState extends State<TimecardPage> {
     return row;
   }
 
-  /// その日に打刻を追加する。
+  /// その日の出退勤入力画面（ホーム画面と同じもの）を、打刻対象を
+  /// このタイムカードの持ち主に固定して開く。
   ///
-  /// 既存の打刻の時刻は変えられない。GAS の updateById が status しか
-  /// 更新しないため、時刻の修正はホーム画面でその日を開いて削除し、
-  /// 入れ直す操作になる。
-  Future<void> _addPunch(DailyTimecard timecard) async {
-    AttendData? data = await showDialog<AttendData?>(
-        context: context,
-        builder: (_) {
-          return PunchInputDialog(
-            name: _name,
-            date: timecard.date,
-            clockInTimeStr: timecard.clockInTimeStr,
-            clockOutTimeStr: timecard.clockOutTimeStr,
-          );
-        });
+  /// ホーム画面と同じ出勤・退勤・有休ボタンと、その日の一覧（削除も可能）が
+  /// 使えるため、時刻を手入力するより誤りにくい。戻ってきたら月のデータを
+  /// 取り直して反映する。
+  Future<void> _openDayInput(DailyTimecard timecard) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => MyHomePage(
+                title: '出退勤の編集 ( $_name )',
+                attendanceService: _service,
+                onDeviceRevoked: widget.onDeviceRevoked ?? () {},
+                initialDate: timecard.date,
+                fixedName: _name)));
 
-    if (data == null || !mounted) {
+    if (!mounted) {
       return;
     }
-
-    // ホーム画面の打刻ボタンと同じ基準で重ならないか確かめる。
-    String? conflict = PunchSequence.findConflict(
-      dataList: _attendDataList,
-      name: _name,
-      type: data.type,
-      dateTime: data.dateTime,
-    );
-    if (conflict != null) {
-      await ErrorDialog.showMessage(context,
-          title: '打刻できません', content: conflict);
-      return;
-    }
-
-    String sheetId = _service.getSheetId(data.dateTime);
-    String sheetName = _service.getSheetName(data.dateTime);
-
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // insertRows はその日ぶんしか返さないので、表の作り直しには使えない。
-      // 追加後に月ぶんを取り直す。
-      await _service.setAttendData(sheetId, sheetName, data);
-      List<AttendData> result =
-          await _service.getByName(sheetId, sheetName, _name);
-
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-        _updateTimecard(result);
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-      });
-      ErrorDialog.showErrorDialog(context, e);
-    }
+    await _getByName(_name, _selectedDate);
   }
 
   Future<void> _getByName(String name, DateTime dateTime) async {
@@ -367,7 +325,6 @@ class _TimecardPageState extends State<TimecardPage> {
   }
 
   void _updateTimecard(List<AttendData> dataList) {
-    _attendDataList = dataList;
     _monthlyTimecard = _service.createMonthlyTimecard(
         _name, _selectedDate.year, _selectedDate.month, dataList);
   }
