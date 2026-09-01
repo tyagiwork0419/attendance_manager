@@ -4,6 +4,13 @@
 gas/.clasprc.json
 gas/node_modules/
 
+# server (Vercel Functions backend)
+server/node_modules/
+server/dist/
+server/.vercel/
+server/.env
+server/.env.local
+
 # Miscellaneous
 *.class
 *.log
