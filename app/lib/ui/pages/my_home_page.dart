@@ -12,11 +12,13 @@ import '../../services/gas_client.dart';
 import '../../application/constants.dart';
 
 import '../components/data_table_view.dart';
+import '../components/dialogs/admin_login_dialog.dart';
 import '../components/dialogs/change_password_dialog.dart';
 import '../components/dialogs/delete_dialog.dart';
 import '../components/dialogs/device_settings_dialog.dart';
 import '../components/dialogs/error_dialog.dart';
 import '../components/my_app_bar.dart';
+import 'settings_page.dart';
 
 //import 'package:linked_scroll_controller/linked_scroll_controller.dart';
 
@@ -334,7 +336,39 @@ class _MyHomePageState extends State<MyHomePage> {
       case AppBarMenu.deviceSettings:
         await _openDeviceSettings();
         break;
+      case AppBarMenu.settings:
+        await _openSettings();
+        break;
     }
+  }
+
+  /// 管理者設定画面を開く。管理者のパスワードで確認できた場合のみ遷移する。
+  Future<void> _openSettings() async {
+    final Object? result = await showDialog<Object?>(
+        context: context,
+        builder: (_) {
+          return AdminLoginDialog(
+            attendanceService: _attendanceService,
+            userNames: _userNames,
+            initialName: _attendanceService.deviceUser,
+          );
+        });
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    final Map<String, dynamic> verified = result as Map<String, dynamic>;
+
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => SettingsPage(
+                attendanceService: _attendanceService,
+                adminName: verified['name'] as String,
+                adminPassword: verified['password'] as String,
+                initialSettings:
+                    verified['settings'] as Map<String, dynamic>)));
   }
 
   Future<void> _openDeviceSettings() async {

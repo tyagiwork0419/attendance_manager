@@ -44,8 +44,9 @@ class MonthlySummary {
   /// 画面と集計で食い違わないようにするため、ここでは計算し直さない。
   factory MonthlySummary.create(
     MonthlyTimecard monthlyTimecard,
-    List<AttendData> attendDataList,
-  ) {
+    List<AttendData> attendDataList, {
+    double standardWorkHoursPerDay = Constants.standardWorkHoursPerDay,
+  }) {
     final int year = monthlyTimecard.date.year;
     final int month = monthlyTimecard.date.month;
 
@@ -57,7 +58,8 @@ class MonthlySummary {
       year: year,
       month: month,
       workHours: workHours,
-      overtimeHours: _overtime(monthlyTimecard, workHours, paidHolidayDays),
+      overtimeHours: _overtime(
+          monthlyTimecard, workHours, paidHolidayDays, standardWorkHoursPerDay),
       paidHolidayDays: paidHolidayDays,
       holidayDays: _countHolidayDays(monthlyTimecard, workHours, paidHolidayDays),
     );
@@ -87,7 +89,11 @@ class MonthlySummary {
 
   /// 総労働時間から、その月の所定労働時間を差し引いた値。
   ///
-  ///     総労働時間 − 休日以外の日数 × [Constants.standardWorkHoursPerDay]
+  ///     総労働時間 − 休日以外の日数 × 所定労働時間(時間/日)
+  ///
+  /// 所定労働時間は管理者設定画面で変えられる値（AttendanceService の
+  /// standardWorkHoursPerDay）。取れなかった場合は
+  /// [Constants.standardWorkHoursPerDay] が既定値として使われる。
   ///
   /// 休日は差し引く日数に入らないので、休日に働いた時間はそのまま残る。
   ///
@@ -100,13 +106,14 @@ class MonthlySummary {
     MonthlyTimecard monthlyTimecard,
     double workHours,
     double paidHolidayDays,
+    double standardWorkHoursPerDay,
   ) {
     if (workHours == 0 && paidHolidayDays == 0) {
       return 0;
     }
 
     return workHours -
-        _workingDaysOf(monthlyTimecard) * Constants.standardWorkHoursPerDay;
+        _workingDaysOf(monthlyTimecard) * standardWorkHoursPerDay;
   }
 
   /// その月の休日以外の日数。

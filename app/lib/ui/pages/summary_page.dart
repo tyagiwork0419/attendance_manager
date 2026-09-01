@@ -102,7 +102,8 @@ class _SummaryPageState extends State<SummaryPage> {
       for (int month = 1; month <= 12; ++month) {
         final MonthlyTimecard timecard =
             _service.createMonthlyTimecard(widget.name, _year, month, dataList);
-        months.add(MonthlySummary.create(timecard, dataList));
+        months.add(MonthlySummary.create(timecard, dataList,
+            standardWorkHoursPerDay: _service.standardWorkHoursPerDay));
       }
 
       if (!mounted) {

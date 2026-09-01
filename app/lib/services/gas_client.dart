@@ -189,6 +189,39 @@ class GasClient {
     }
   }
 
+  /// 管理者設定画面を開く。管理者(role=admin)のパスワードでのみ通る。
+  ///
+  /// パスワードが違う場合や管理者でない場合は [GasException] を投げる
+  /// （`invalid_credentials` / `admin_required`）。
+  Future<Map<String, dynamic>> getAdminSettings(
+    String name,
+    String password,
+  ) async {
+    final dynamic result = await _send({
+      'action': 'getAdminSettings',
+      'name': name,
+      'password': password,
+      'deviceToken': _device.token,
+    });
+    return result as Map<String, dynamic>;
+  }
+
+  /// 設定を更新する。管理者(role=admin)のパスワードでのみ通る。
+  Future<Map<String, dynamic>> updateSettings(
+    String name,
+    String password,
+    Map<String, dynamic> settings,
+  ) async {
+    final dynamic result = await _send({
+      'action': 'updateSettings',
+      'name': name,
+      'password': password,
+      'settings': settings,
+      'deviceToken': _device.token,
+    });
+    return result as Map<String, dynamic>;
+  }
+
   /// 端末登録を解除する。サーバー側で revoke された場合にも使う。
   void clearDevice() {
     _device.clear();

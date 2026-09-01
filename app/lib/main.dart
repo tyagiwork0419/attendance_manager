@@ -43,10 +43,13 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  /// 祝日カレンダーの先読み。失敗しても打刻はできるので画面は止めない。
+  /// 祝日カレンダーと設定の先読み。失敗しても打刻はできるので画面は止めない。
   void _startSession() {
     widget.attendanceService.getEvents().catchError((Object e) {
       debugPrint('getEvents failed: $e');
+    });
+    widget.attendanceService.primeSettings().catchError((Object e) {
+      debugPrint('primeSettings failed: $e');
     });
   }
 

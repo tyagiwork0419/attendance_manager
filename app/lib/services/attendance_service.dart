@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 
+import '../application/constants.dart';
 import '../models/calendar.dart';
 import '../models/monthly_timecard.dart';
 import 'gas_client.dart';
@@ -12,6 +13,13 @@ class AttendanceService {
   final Calendar _calendar = Calendar();
 
   bool initialized = false;
+
+  /// サーバー側の設定。管理者設定画面で変更できる値。
+  ///
+  /// 取得できるまでは [Constants] の既定値を使う。祝日カレンダーと同じく、
+  /// 取れなくても打刻自体は妨げない。
+  double _standardWorkHoursPerDay = Constants.standardWorkHoursPerDay;
+  double get standardWorkHoursPerDay => _standardWorkHoursPerDay;
 
   //String accessToken = '';
 
@@ -212,6 +220,47 @@ class AttendanceService {
 
     _calendar.setEvents(events);
     initialized = true;
+  }
+
+  /// サーバー側の設定を読む。登録済み端末であれば誰でも呼べる。
+  Future<Map<String, dynamic>> getSettings() async {
+    var jsonResult = await _gasClient.post('getSettings', {});
+    return json.decode(jsonResult) as Map<String, dynamic>;
+  }
+
+  /// 起動時に設定を読み込み、[standardWorkHoursPerDay] に反映する。
+  ///
+  /// 集計の残業計算に使うため先読みしておく。失敗しても打刻はできるので
+  /// 画面は止めない（祝日カレンダーの先読みと同じ考え方）。
+  Future<void> primeSettings() async {
+    final Map<String, dynamic> settings = await getSettings();
+    final dynamic hours = settings['standardWorkHoursPerDay'];
+    if (hours is num) {
+      _standardWorkHoursPerDay = hours.toDouble();
+    }
+  }
+
+  /// 管理者設定画面を開く。管理者でなければ [GasException] を投げる。
+  Future<Map<String, dynamic>> getAdminSettings(
+    String name,
+    String password,
+  ) {
+    return _gasClient.getAdminSettings(name, password);
+  }
+
+  /// 設定を保存する。管理者でなければ [GasException] を投げる。
+  Future<Map<String, dynamic>> updateSettings(
+    String name,
+    String password,
+    Map<String, dynamic> settings,
+  ) async {
+    final Map<String, dynamic> saved =
+        await _gasClient.updateSettings(name, password, settings);
+    final dynamic hours = saved['standardWorkHoursPerDay'];
+    if (hours is num) {
+      _standardWorkHoursPerDay = hours.toDouble();
+    }
+    return saved;
   }
 
   MonthlyTimecard createMonthlyTimecard(

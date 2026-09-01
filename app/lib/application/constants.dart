@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.39';
+  static const String version = '0.0.40';
 
   /// GAS Web アプリのエンドポイント。
   ///

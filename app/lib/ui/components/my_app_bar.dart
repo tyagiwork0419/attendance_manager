@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../application/constants.dart';
 
 /// AppBar のメニュー項目。
-enum AppBarMenu { changePassword, deviceSettings }
+enum AppBarMenu { changePassword, deviceSettings, settings }
 
 class MyAppBar {
   final String title;
@@ -38,6 +38,10 @@ class MyAppBar {
               PopupMenuItem(
                 value: AppBarMenu.deviceSettings,
                 child: Text('端末の設定'),
+              ),
+              PopupMenuItem(
+                value: AppBarMenu.settings,
+                child: Text('設定'),
               ),
             ],
           ),
