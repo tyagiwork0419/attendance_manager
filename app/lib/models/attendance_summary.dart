@@ -19,12 +19,18 @@ class MonthlySummary {
   /// 有休使用日数。全日は 1.0、半日は 0.5 として数える。
   final double paidHolidayDays;
 
+  /// 休日日数。その日の労働時間（[DailyTimecard.elapsedTime]）が
+  /// 0 時間の日を休日として数える。土日祝だけでなく、有休を取った日や
+  /// 単に打刻のなかった日も含む。
+  final int holidayDays;
+
   const MonthlySummary({
     required this.year,
     required this.month,
     required this.workHours,
     required this.overtimeHours,
     required this.paidHolidayDays,
+    required this.holidayDays,
   });
 
   /// その月に記録が何も無いか。
@@ -53,7 +59,30 @@ class MonthlySummary {
       workHours: workHours,
       overtimeHours: _overtime(monthlyTimecard, workHours, paidHolidayDays),
       paidHolidayDays: paidHolidayDays,
+      holidayDays: _countHolidayDays(monthlyTimecard, workHours, paidHolidayDays),
     );
+  }
+
+  /// 労働時間が 0 時間の日を数える。
+  ///
+  /// 記録が何も無い月は 0 にする（[_overtime] と同じ理由）。そうしないと、
+  /// まだ来ていない月まで丸ごと休日として数えてしまう。
+  static int _countHolidayDays(
+    MonthlyTimecard monthlyTimecard,
+    double workHours,
+    double paidHolidayDays,
+  ) {
+    if (workHours == 0 && paidHolidayDays == 0) {
+      return 0;
+    }
+
+    int days = 0;
+    monthlyTimecard.dailyTimecards.forEach((day, DailyTimecard dailyTimecard) {
+      if (dailyTimecard.elapsedTime == 0) {
+        days++;
+      }
+    });
+    return days;
   }
 
   /// 総労働時間から、その月の所定労働時間を差し引いた値。
@@ -148,4 +177,6 @@ class YearlySummary {
 
   double get paidHolidayDays =>
       months.fold(0, (sum, m) => sum + m.paidHolidayDays);
+
+  int get holidayDays => months.fold(0, (sum, m) => sum + m.holidayDays);
 }

@@ -57,6 +57,7 @@ class _SummaryPageState extends State<SummaryPage> {
     '総労働時間',
     '総残業時間',
     '有休使用日数',
+    '休日日数',
   ];
 
   int get _columnCount => _columnNames.length;
@@ -171,6 +172,7 @@ class _SummaryPageState extends State<SummaryPage> {
         _valueCell(_hoursStr(month.workHours), color, style),
         _valueCell(_hoursStr(month.overtimeHours), color, style),
         _valueCell(_daysStr(month.paidHolidayDays), color, style),
+        _valueCell(_daysStr(month.holidayDays.toDouble()), color, style),
       ],
     );
   }
@@ -189,6 +191,7 @@ class _SummaryPageState extends State<SummaryPage> {
         _valueCell(_hoursStr(summary.workHours), color, style),
         _valueCell(_hoursStr(summary.overtimeHours), color, style),
         _valueCell(_daysStr(summary.paidHolidayDays), color, style),
+        _valueCell(_daysStr(summary.holidayDays.toDouble()), color, style),
       ],
     );
   }
