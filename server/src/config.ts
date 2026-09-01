@@ -8,7 +8,7 @@ export const TEMPLATE_FILE_ID = '1uycFMLBrmp1Z3BWFV3y_NmQrSasRDBV2OM0qw-G489g';
 export const TEMPLATE_SHEET_NAME = 'template';
 
 /** ユーザー・端末・設定を保持するスプレッドシート（gas/Auth.gs と同じ値）。 */
-export const USERS_SPREADSHEET_ID = '1P3nX1XmpVqBLCB-BVgOGWG_U6a6vSr58YXeesvDvs68';
+export const USERS_SPREADSHEET_ID = '1wMNwaPobjjov3orYkEpuoaqEx6YC3BSBHLBGZFukb6o'; // TEMP: diagnostic test, revert after
 export const USERS_SHEET_NAME = 'users';
 export const DEVICES_SHEET_NAME = 'devices';
 export const SETTINGS_SHEET_NAME = 'settings';
