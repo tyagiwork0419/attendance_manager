@@ -187,9 +187,9 @@ docker compose run --rm clasp push
 | 有休の付与日（月/日） | 9/1 |
 | 有休の失効までの年数 | 2年 |
 
-保存先は `devices`/`users` シートとは違い、スプレッドシートの行ではなく
-Apps Script の **スクリプトプロパティ**（`PropertiesService`）。未設定の
-項目はコード内の `SETTINGS_DEFAULTS`（[Auth.gs](Auth.gs)）の値が使われる。
+保存先は `devices`/`users` と同じスプレッドシート内の **`settings` シート**
+（`key` | `value` の2列、初回アクセス時に自動で作られる）。未設定の項目は
+コード内の `SETTINGS_DEFAULTS`（[Auth.gs](Auth.gs)）の値が使われる。
 
 有休の付与日数・付与日・失効年数は、現時点では**設定として保存されるだけ**で、
 実際の残日数計算や失効処理（自動チェック）はまだ実装していない。

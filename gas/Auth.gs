@@ -322,12 +322,28 @@ function loadUserRecord_(name) {
 // アプリ設定 (管理者だけが変更できる値)
 // ---------------------------------------------------------------------------
 //
-// PropertiesService に保存する。users/devices シートと違って行が増える
-// ものではなく、常に1組しか存在しない値なので、シートよりシンプルに
-// 済むこちらを使う。未設定のキーは SETTINGS_DEFAULTS の値を使う。
+// 同じスプレッドシート内の settings シート（key | value の2列）に保存する。
+// 以前は PropertiesService（スクリプトプロパティ）に保存していたが、
+// 将来バックエンドを他の実行環境（Vercel Functions 等）に差し替えたときも
+// 同じスプレッドシートから同じ設定を読めるようにするため、他のデータと同じく
+// シート側に置く。未設定のキーは SETTINGS_DEFAULTS の値を使う。
 
 /** CacheService.put の上限（秒）。セッション有効期限の設定値をこれで丸める。 */
 var MAX_TOKEN_TTL_SECONDS = 21600;
+
+var SETTINGS_SHEET_NAME = 'settings';
+var SETTINGS_HEADER = ['key', 'value'];
+
+/** settings シートを返す。無ければ見出し行付きで作る（devicesSheet_ と同じ考え方）。 */
+function settingsSheet_() {
+  var book = SpreadsheetApp.openById(USERS_SPREADSHEET_ID);
+  var sheet = book.getSheetByName(SETTINGS_SHEET_NAME);
+  if (!sheet) {
+    sheet = book.insertSheet(SETTINGS_SHEET_NAME);
+    sheet.appendRow(SETTINGS_HEADER);
+  }
+  return sheet;
+}
 
 var SETTINGS_DEFAULTS = {
   // 所定労働時間(時間/日)。タイムカードの残業計算に使う（クライアント側）。
@@ -349,11 +365,20 @@ var SETTINGS_DEFAULTS = {
 
 /** 設定を読む。未設定のキーは SETTINGS_DEFAULTS で埋める。 */
 function loadSettings_() {
-  var stored = PropertiesService.getScriptProperties().getProperties();
-  var settings = {};
+  var sheet = settingsSheet_();
+  var values = sheet.getDataRange().getValues();
 
+  var stored = {};
+  for (var i = 1; i < values.length; i++) {
+    var key = values[i][0];
+    if (key) {
+      stored[key] = values[i][1];
+    }
+  }
+
+  var settings = {};
   Object.keys(SETTINGS_DEFAULTS).forEach(function (key) {
-    var raw = stored['setting:' + key];
+    var raw = stored[key];
     if (raw === undefined || raw === null || raw === '') {
       settings[key] = SETTINGS_DEFAULTS[key];
       return;
@@ -370,9 +395,25 @@ function loadSettings_() {
 
 /** 設定を保存する。呼び出し前に validateSettings_ を通した値を渡すこと。 */
 function saveSettings_(settings) {
-  var props = PropertiesService.getScriptProperties();
+  var sheet = settingsSheet_();
+  var values = sheet.getDataRange().getValues();
+
+  var rowByKey = {};
+  for (var i = 1; i < values.length; i++) {
+    var key = values[i][0];
+    if (key) {
+      rowByKey[key] = i + 1; // シートの行番号（1始まり）
+    }
+  }
+
   Object.keys(SETTINGS_DEFAULTS).forEach(function (key) {
-    props.setProperty('setting:' + key, JSON.stringify(settings[key]));
+    var json = JSON.stringify(settings[key]);
+    var row = rowByKey[key];
+    if (row) {
+      sheet.getRange(row, 2).setValue(json);
+    } else {
+      sheet.appendRow([key, json]);
+    }
   });
 }
 
