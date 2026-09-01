@@ -1,4 +1,5 @@
 import { USERS_SHEET_NAME } from './config.js';
+import { columnLetter } from './google/a1.js';
 import type { SheetsClient } from './google/sheets.js';
 
 export interface UserRecord {
@@ -65,4 +66,38 @@ export async function loadUserRecord(
 export async function listUserNames(client: SheetsClient): Promise<string[]> {
   const users = await loadUsers(client);
   return users.map((u) => u.name);
+}
+
+/**
+ * users シートのパスワード欄を書き換える。
+ *
+ * Sheets API の valueInputOption: RAW は値をそのまま文字列として保存するため、
+ * GAS版のように setNumberFormat('@') で先に書式を文字列にしておく必要がない
+ * （数字だけのパスワードでも先頭の0が失われない）。
+ */
+export async function writeUserPassword(
+  client: SheetsClient,
+  name: string,
+  newPassword: string
+): Promise<void> {
+  const rows = await client.getValues(USERS_SHEET_NAME);
+  const header = (rows[0] ?? []).map((h) => String(h ?? '').trim().toLowerCase());
+  const nameIndex = header.indexOf(COLUMN_NAME);
+  const passwordIndex = header.indexOf(COLUMN_PASSWORD);
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i] ?? [];
+    if (String(row[nameIndex] ?? '').trim() !== name) {
+      continue;
+    }
+    await client.batchUpdateValues([
+      {
+        range: `${USERS_SHEET_NAME}!${columnLetter(passwordIndex)}${i + 1}`,
+        values: [[newPassword]],
+      },
+    ]);
+    return;
+  }
+
+  throw new Error(`ユーザーが見つかりません: ${name}`);
 }

@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SheetsClient } from '../src/google/sheets.js';
-import { isAdmin, loadUserRecord, loadUsers, listUserNames } from '../src/users.js';
+import {
+  isAdmin,
+  loadUserRecord,
+  loadUsers,
+  listUserNames,
+  writeUserPassword,
+} from '../src/users.js';
 
 function makeClient(rows: string[][]): SheetsClient {
   return {
@@ -106,5 +112,38 @@ describe('listUserNames', () => {
       ['大滝', '222222'],
     ]);
     expect(await listUserNames(client)).toEqual(['八木', '大滝']);
+  });
+});
+
+describe('writeUserPassword', () => {
+  it("updates the matching user's password cell", async () => {
+    const client = makeClient([
+      ['name', 'password'],
+      ['八木', '111111'],
+      ['大滝', '222222'],
+    ]);
+    await writeUserPassword(client, '大滝', '0123456');
+    expect(client.batchUpdateValues).toHaveBeenCalledWith([
+      { range: 'users!B3', values: [['0123456']] },
+    ]);
+  });
+
+  it('resolves the password column by header name, not a fixed position', async () => {
+    const client = makeClient([
+      ['password', 'name'],
+      ['111111', '八木'],
+    ]);
+    await writeUserPassword(client, '八木', 'newpass');
+    expect(client.batchUpdateValues).toHaveBeenCalledWith([
+      { range: 'users!A2', values: [['newpass']] },
+    ]);
+  });
+
+  it('throws when no user matches the given name', async () => {
+    const client = makeClient([
+      ['name', 'password'],
+      ['八木', '111111'],
+    ]);
+    await expect(writeUserPassword(client, '大滝', 'x')).rejects.toThrow(/大滝/);
   });
 });
