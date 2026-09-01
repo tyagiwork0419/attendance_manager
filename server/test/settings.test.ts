@@ -12,6 +12,7 @@ function makeClient(rows: string[][]): SheetsClient {
     getValues: vi.fn(async () => rows),
     batchUpdateValues: vi.fn(async () => {}),
     appendValues: vi.fn(async () => {}),
+    ensureSheetWithHeader: vi.fn(async () => {}),
   };
 }
 

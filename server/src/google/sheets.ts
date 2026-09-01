@@ -15,6 +15,8 @@ export interface SheetsClient {
   batchUpdateValues(updates: { range: string; values: unknown[][] }[]): Promise<void>;
   /** 範囲の末尾に行を追記する（既存行は変更しない）。 */
   appendValues(range: string, values: unknown[][]): Promise<void>;
+  /** シートが無ければ作り、見出し行を書く。既にあれば何もしない。 */
+  ensureSheetWithHeader(sheetName: string, header: string[]): Promise<void>;
 }
 
 export function createSheetsClient(auth: JWT, spreadsheetId: string): SheetsClient {
@@ -46,6 +48,26 @@ export function createSheetsClient(auth: JWT, spreadsheetId: string): SheetsClie
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values },
+      });
+    },
+
+    async ensureSheetWithHeader(sheetName, header) {
+      const meta = await api.spreadsheets.get({ spreadsheetId });
+      const exists = (meta.data.sheets ?? []).some(
+        (s) => s.properties?.title === sheetName
+      );
+      if (exists) {
+        return;
+      }
+      await api.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
+      });
+      await api.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${sheetName}!A1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [header] },
       });
     },
   };
