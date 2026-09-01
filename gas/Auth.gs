@@ -19,7 +19,11 @@
 // 設定
 // ---------------------------------------------------------------------------
 
-/** セッションの有効期間(秒)。CacheService の上限は 21600 秒 (6時間)。 */
+/**
+ * セッションの有効期間(秒)のデフォルト値。CacheService の上限は 21600 秒 (6時間)。
+ * 管理者設定画面で変えられる（SETTINGS_DEFAULTS.sessionTtlSeconds）。実際に
+ * 使われるのはそちらの値で、これは設定が未保存のときの初期値でしかない。
+ */
 var TOKEN_TTL_SECONDS = 21600;
 
 /** 認証不要。端末登録の画面を出すために必要。 */
@@ -32,19 +36,23 @@ var PUBLIC_ACTIONS = ['getUsers', 'registerDevice', 'login'];
  * 「最初の1回だけ端末登録すれば、以後は毎日そのまま打刻できる」動作になる。
  * 一方で URL を知っただけの第三者は端末トークンを持たないため何もできない。
  */
-var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById', 'listYears'];
+var DEVICE_ACTIONS = ['getEvents', 'selectByDate', 'insertRows', 'updateById', 'listYears', 'getSettings'];
 
 /**
  * 端末トークンに加えて、現在のパスワードによる本人確認を行う操作。
  * セッショントークンは使わない（変更前のパスワードそのものが本人確認になる）。
+ *
+ * getAdminSettings / updateSettings はさらに管理者であることも要求する
+ * （handleGetAdminSettings_ / handleUpdateSettings_ 内で isAdmin_ を見る）。
  */
-var ACCOUNT_ACTIONS = ['changePassword', 'updateDeviceOwner'];
+var ACCOUNT_ACTIONS = ['changePassword', 'updateDeviceOwner', 'getAdminSettings', 'updateSettings'];
 
 /**
- * 新しいパスワードの最低文字数。
+ * 新しいパスワードの最低文字数のデフォルト値。
  *
  * 端末トークンの導入でパスワードを日常的に打つ必要がなくなったため、
  * 以前の4桁数字より長くしても運用の負担にならない。
+ * 管理者設定画面で変えられる（SETTINGS_DEFAULTS.minPasswordLength）。
  */
 var MIN_PASSWORD_LENGTH = 6;
 
@@ -115,6 +123,14 @@ function doPost(e) {
       return handleUpdateDeviceOwner_(req);
     }
 
+    if (action === 'getAdminSettings') {
+      return handleGetAdminSettings_(req);
+    }
+
+    if (action === 'updateSettings') {
+      return handleUpdateSettings_(req);
+    }
+
     if (isPersonalAction) {
       var target = (req.parameters && req.parameters.name) || '';
 
@@ -174,16 +190,17 @@ function handleLogin_(req) {
     return fail_('名前またはパスワードが違います', 'invalid_credentials');
   }
 
-  var token = issueToken_(name);
-  return ok_({ token: token, name: name, expiresIn: TOKEN_TTL_SECONDS });
+  var ttl = loadSettings_().sessionTtlSeconds;
+  var token = issueToken_(name, ttl);
+  return ok_({ token: token, name: name, expiresIn: ttl });
 }
 
-function issueToken_(name) {
+function issueToken_(name, ttlSeconds) {
   var token = Utilities.getUuid() + Utilities.getUuid();
   CacheService.getScriptCache().put(
     sessionKey_(token),
     JSON.stringify({ name: name }),
-    TOKEN_TTL_SECONDS
+    ttlSeconds || TOKEN_TTL_SECONDS
   );
   return token;
 }
@@ -301,6 +318,173 @@ function loadUserRecord_(name) {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// アプリ設定 (管理者だけが変更できる値)
+// ---------------------------------------------------------------------------
+//
+// PropertiesService に保存する。users/devices シートと違って行が増える
+// ものではなく、常に1組しか存在しない値なので、シートよりシンプルに
+// 済むこちらを使う。未設定のキーは SETTINGS_DEFAULTS の値を使う。
+
+/** CacheService.put の上限（秒）。セッション有効期限の設定値をこれで丸める。 */
+var MAX_TOKEN_TTL_SECONDS = 21600;
+
+var SETTINGS_DEFAULTS = {
+  // 所定労働時間(時間/日)。タイムカードの残業計算に使う（クライアント側）。
+  standardWorkHoursPerDay: 8,
+  // 新しいパスワードの最低文字数。
+  minPasswordLength: MIN_PASSWORD_LENGTH,
+  // 本人確認セッションの有効期限(秒)。上限は MAX_TOKEN_TTL_SECONDS。
+  sessionTtlSeconds: TOKEN_TTL_SECONDS,
+  // 会社の休日カレンダーID（Google カレンダー）。
+  companyHolidayCalendarId: '50oe6kjcmt9nmjlagbab00af7c@group.calendar.google.com',
+  // 有休の年間付与日数（全社一律）。
+  paidHolidayGrantDays: 10,
+  // 有休を付与する月日（例: 9月1日なら 9 / 1）。
+  paidHolidayGrantMonth: 9,
+  paidHolidayGrantDay: 1,
+  // 付与から何年で失効するか。
+  paidHolidayExpirationYears: 2
+};
+
+/** 設定を読む。未設定のキーは SETTINGS_DEFAULTS で埋める。 */
+function loadSettings_() {
+  var stored = PropertiesService.getScriptProperties().getProperties();
+  var settings = {};
+
+  Object.keys(SETTINGS_DEFAULTS).forEach(function (key) {
+    var raw = stored['setting:' + key];
+    if (raw === undefined || raw === null || raw === '') {
+      settings[key] = SETTINGS_DEFAULTS[key];
+      return;
+    }
+    try {
+      settings[key] = JSON.parse(raw);
+    } catch (err) {
+      settings[key] = SETTINGS_DEFAULTS[key];
+    }
+  });
+
+  return settings;
+}
+
+/** 設定を保存する。呼び出し前に validateSettings_ を通した値を渡すこと。 */
+function saveSettings_(settings) {
+  var props = PropertiesService.getScriptProperties();
+  Object.keys(SETTINGS_DEFAULTS).forEach(function (key) {
+    props.setProperty('setting:' + key, JSON.stringify(settings[key]));
+  });
+}
+
+/**
+ * 入力を検証し、保存してよい形に整える。
+ * 未指定の項目は現在の値をそのまま使う（部分更新を許すため）。
+ */
+function validateSettings_(input) {
+  var current = loadSettings_();
+  input = input || {};
+
+  function numberOr_(value, fallback) {
+    var n = Number(value);
+    return isFinite(n) ? n : fallback;
+  }
+
+  function clamp_(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  var out = {};
+
+  out.standardWorkHoursPerDay = clamp_(
+    numberOr_(input.standardWorkHoursPerDay, current.standardWorkHoursPerDay), 0.5, 24
+  );
+
+  out.minPasswordLength = Math.round(clamp_(
+    numberOr_(input.minPasswordLength, current.minPasswordLength), 1, 100
+  ));
+
+  out.sessionTtlSeconds = Math.round(clamp_(
+    numberOr_(input.sessionTtlSeconds, current.sessionTtlSeconds), 60, MAX_TOKEN_TTL_SECONDS
+  ));
+
+  out.companyHolidayCalendarId = input.companyHolidayCalendarId === undefined
+    ? current.companyHolidayCalendarId
+    : String(input.companyHolidayCalendarId).trim();
+
+  out.paidHolidayGrantDays = clamp_(
+    numberOr_(input.paidHolidayGrantDays, current.paidHolidayGrantDays), 0, 365
+  );
+
+  out.paidHolidayGrantMonth = Math.round(clamp_(
+    numberOr_(input.paidHolidayGrantMonth, current.paidHolidayGrantMonth), 1, 12
+  ));
+
+  out.paidHolidayGrantDay = Math.round(clamp_(
+    numberOr_(input.paidHolidayGrantDay, current.paidHolidayGrantDay), 1, 31
+  ));
+
+  out.paidHolidayExpirationYears = Math.round(clamp_(
+    numberOr_(input.paidHolidayExpirationYears, current.paidHolidayExpirationYears), 1, 20
+  ));
+
+  return out;
+}
+
+/** 設定を読む。誰でも呼べる（登録済み端末であればよい）。管理者判定はしない。 */
+function getSettings(params) {
+  return loadSettings_();
+}
+
+/**
+ * 管理者設定画面を開くための確認。管理者(role=admin)のパスワードでのみ通る。
+ * 値は変更しない。
+ */
+function handleGetAdminSettings_(req) {
+  var name = req.name;
+  var password = req.password;
+
+  if (!name || !password) {
+    return fail_('名前とパスワードを入力してください', 'invalid_credentials');
+  }
+
+  var record = loadUserRecord_(name);
+  var expected = record ? record.password : '';
+  if (!record || !timingSafeEqual_(String(password), expected)) {
+    return fail_('名前またはパスワードが違います', 'invalid_credentials');
+  }
+
+  if (!isAdmin_(record)) {
+    return fail_('管理者のみ利用できます', 'admin_required');
+  }
+
+  return ok_(loadSettings_());
+}
+
+/** 設定を更新する。管理者(role=admin)のパスワードでのみ通る。 */
+function handleUpdateSettings_(req) {
+  var name = req.name;
+  var password = req.password;
+
+  if (!name || !password) {
+    return fail_('名前とパスワードを入力してください', 'invalid_credentials');
+  }
+
+  var record = loadUserRecord_(name);
+  var expected = record ? record.password : '';
+  if (!record || !timingSafeEqual_(String(password), expected)) {
+    return fail_('名前またはパスワードが違います', 'invalid_credentials');
+  }
+
+  if (!isAdmin_(record)) {
+    return fail_('管理者のみ設定を変更できます', 'admin_required');
+  }
+
+  var settings = validateSettings_(req.settings);
+  saveSettings_(settings);
+
+  return ok_(loadSettings_());
+}
+
 /**
  * パスワードを変更する。現在のパスワードを知っていることが条件。
  *
@@ -322,9 +506,10 @@ function handleChangePassword_(req) {
     return fail_('現在のパスワードが違います', 'invalid_credentials');
   }
 
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+  var minPasswordLength = loadSettings_().minPasswordLength;
+  if (newPassword.length < minPasswordLength) {
     return fail_(
-      '新しいパスワードは' + MIN_PASSWORD_LENGTH + '文字以上にしてください',
+      '新しいパスワードは' + minPasswordLength + '文字以上にしてください',
       'weak_password'
     );
   }

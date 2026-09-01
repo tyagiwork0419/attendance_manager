@@ -32,11 +32,12 @@ class CalendarAPIController{
     // 日本の祝日（Google 提供）
     let id1 = "ja.japanese#holiday@group.v.calendar.google.com";
 
-    // 会社の休日カレンダー。
+    // 会社の休日カレンダー。管理者設定画面（Auth.gs の
+    // SETTINGS_DEFAULTS.companyHolidayCalendarId）で変更できる。
     // 以前は "yagiad.public@gmail.com" を指定していたが、これはそのアカウントの
     // デフォルトカレンダーの ID であり、休日を登録している副カレンダーとは別物。
     // 副カレンダーの ID は @group.calendar.google.com 形式になる。
-    let id2 = "50oe6kjcmt9nmjlagbab00af7c@group.calendar.google.com";
+    let id2 = loadSettings_().companyHolidayCalendarId;
 
     //let id = "tyagiwork0419@gmail.com";
     let ids = [id1, id2];

@@ -170,14 +170,38 @@ docker compose run --rm clasp push
 スプレッドシート ID とシート名は [Auth.gs](Auth.gs) の
 `USERS_SPREADSHEET_ID` / `USERS_SHEET_NAME` で変更できる。
 
+### アプリ設定（管理者設定画面）
+
+右上メニュー → **設定** から、管理者だけが以下の値を変更できる。
+一般利用者もメニュー自体は開けるが、保存しようとすると
+サーバーが `admin_required` で拒否する（画面を開くところから
+管理者のパスワードを要求するので、実質的に管理者しか触れない）。
+
+| 設定 | 既定値 |
+|---|---|
+| 所定労働時間(時間/日) | 8 |
+| パスワード最低文字数 | 6 |
+| 本人確認セッションの有効期限 | 6時間（上限） |
+| 会社の休日カレンダーID | `50oe6kjcmt9nmjlagbab00af7c@group.calendar.google.com` |
+| 有休の年間付与日数（全社一律） | 10日 |
+| 有休の付与日（月/日） | 9/1 |
+| 有休の失効までの年数 | 2年 |
+
+保存先は `devices`/`users` シートとは違い、スプレッドシートの行ではなく
+Apps Script の **スクリプトプロパティ**（`PropertiesService`）。未設定の
+項目はコード内の `SETTINGS_DEFAULTS`（[Auth.gs](Auth.gs)）の値が使われる。
+
+有休の付与日数・付与日・失効年数は、現時点では**設定として保存されるだけ**で、
+実際の残日数計算や失効処理（自動チェック）はまだ実装していない。
+
 ### パスワードの変更
 
 利用者自身がアプリから変更できる（右上のメニュー → **パスワードの変更**）。
 現在のパスワードを知っていることが条件で、登録済みの端末からのみ実行できる。
 
-新しいパスワードは `Auth.gs` の `MIN_PASSWORD_LENGTH`（6文字）以上が必要。
-端末トークンの導入でパスワードを日常的に打つ必要がなくなったため、
-以前の4桁数字より長くしても運用の負担にならない。
+新しいパスワードは、管理者設定画面の「パスワード最低文字数」（既定6文字）
+以上が必要。端末トークンの導入でパスワードを日常的に打つ必要がなくなった
+ため、以前の4桁数字より長くしても運用の負担にならない。
 
 アプリ経由で変更した場合、セルは文字列書式で書かれるため
 先頭が 0 のパスワードもそのまま保持される。
@@ -371,7 +395,8 @@ GAS 側は `e.postData.contents` から本文を読むため、この指定で�
 ```
 
 `code` の値: `invalid_credentials` / `unauthorized` / `admin_required` /
-`unknown_action` / `no_action` / `empty_request` / `internal_error`
+`weak_password` / `device_unauthorized` / `unknown_action` / `no_action` /
+`empty_request` / `internal_error`
 
 ## アクセス制御
 
@@ -380,8 +405,9 @@ Web アプリ URL を知っただけの第三者はデータに一切触れら�
 
 ```javascript
 var PUBLIC_ACTIONS   = ['getUsers', 'registerDevice', 'login'];
-var DEVICE_ACTIONS   = ['getEvents', 'selectByDate', 'insertRows', 'updateById'];
-var PERSONAL_ACTIONS = ['selectByName'];
+var DEVICE_ACTIONS   = ['getEvents', 'selectByDate', 'insertRows', 'updateById', 'listYears', 'getSettings'];
+var PERSONAL_ACTIONS = ['selectByName', 'selectByNameForYear'];
+var ACCOUNT_ACTIONS  = ['changePassword', 'updateDeviceOwner', 'getAdminSettings', 'updateSettings'];
 ```
 
 | 区分 | 必要なもの |
@@ -389,6 +415,7 @@ var PERSONAL_ACTIONS = ['selectByName'];
 | `PUBLIC_ACTIONS` | なし（端末登録画面を出すために必要） |
 | `DEVICE_ACTIONS` | 有効な端末トークン |
 | `PERSONAL_ACTIONS` | 端末トークン + 本人であること |
+| `ACCOUNT_ACTIONS` | 端末トークン + その場での名前・パスワード（`getAdminSettings` / `updateSettings` はさらに管理者であること） |
 
 ### 端末トークン
 
