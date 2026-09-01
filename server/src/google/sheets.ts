@@ -17,11 +17,22 @@ export interface SheetsClient {
   appendValues(range: string, values: unknown[][]): Promise<void>;
   /** シートが無ければ作り、見出し行を書く。既にあれば何もしない。 */
   ensureSheetWithHeader(sheetName: string, header: string[]): Promise<void>;
+  /** このスプレッドシート内の全シート（タブ）名。 */
+  listSheetNames(): Promise<string[]>;
+  /**
+   * シートが無ければ、同じスプレッドシート内の templateSheetName を複製して
+   * newSheetName にリネームする。既にあれば何もしない。
+   */
+  ensureSheetCopiedFrom(templateSheetName: string, newSheetName: string): Promise<void>;
 }
 
-export function createSheetsClient(auth: JWT, spreadsheetId: string): SheetsClient {
-  const api = google.sheets({ version: 'v4', auth });
+type SheetsApi = Pick<sheets_v4.Sheets, 'spreadsheets'>;
 
+export function createSheetsClient(
+  auth: JWT,
+  spreadsheetId: string,
+  api: SheetsApi = google.sheets({ version: 'v4', auth })
+): SheetsClient {
   return {
     async getValues(range) {
       const response = await api.spreadsheets.values.get({ spreadsheetId, range });
@@ -68,6 +79,50 @@ export function createSheetsClient(auth: JWT, spreadsheetId: string): SheetsClie
         range: `${sheetName}!A1`,
         valueInputOption: 'RAW',
         requestBody: { values: [header] },
+      });
+    },
+
+    async listSheetNames() {
+      const meta = await api.spreadsheets.get({ spreadsheetId });
+      return (meta.data.sheets ?? [])
+        .map((s) => s.properties?.title)
+        .filter((title): title is string => !!title);
+    },
+
+    async ensureSheetCopiedFrom(templateSheetName, newSheetName) {
+      const meta = await api.spreadsheets.get({ spreadsheetId });
+      const sheetsList = meta.data.sheets ?? [];
+
+      const exists = sheetsList.some((s) => s.properties?.title === newSheetName);
+      if (exists) {
+        return;
+      }
+
+      const template = sheetsList.find((s) => s.properties?.title === templateSheetName);
+      const templateSheetId = template?.properties?.sheetId;
+      if (templateSheetId === undefined || templateSheetId === null) {
+        throw new Error(`テンプレートシートが見つかりません: ${templateSheetName}`);
+      }
+
+      const copyResponse = await api.spreadsheets.sheets.copyTo({
+        spreadsheetId,
+        sheetId: templateSheetId,
+        requestBody: { destinationSpreadsheetId: spreadsheetId },
+      });
+      const newSheetId = copyResponse.data.sheetId;
+
+      await api.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: newSheetId, title: newSheetName },
+                fields: 'title',
+              },
+            },
+          ],
+        },
       });
     },
   };

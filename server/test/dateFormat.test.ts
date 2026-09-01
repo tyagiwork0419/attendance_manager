@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateJST, formatDateTimeJST } from '../src/dateFormat.js';
+import { formatDateJST, formatDateTimeJST, parseJstDateTime } from '../src/dateFormat.js';
 
 describe('formatDateJST', () => {
   it('formats as yyyy/MM/dd in Asia/Tokyo', () => {
@@ -16,5 +16,24 @@ describe('formatDateJST', () => {
 describe('formatDateTimeJST', () => {
   it('formats as yyyy/MM/dd HH:mm:ss in Asia/Tokyo', () => {
     expect(formatDateTimeJST(new Date('2026-08-31T22:05:09Z'))).toBe('2026/09/01 07:05:09');
+  });
+});
+
+describe('parseJstDateTime', () => {
+  it('round-trips with formatDateTimeJST', () => {
+    const original = new Date('2026-08-31T22:05:09Z');
+    const formatted = formatDateTimeJST(original);
+    expect(parseJstDateTime(formatted).getTime()).toBe(original.getTime());
+  });
+
+  it('interprets the string as JST wall-clock time', () => {
+    expect(parseJstDateTime('2026/09/01 07:05:09').toISOString()).toBe(
+      '2026-08-31T22:05:09.000Z'
+    );
+  });
+
+  it('throws on an unparsable string', () => {
+    expect(() => parseJstDateTime('not a date')).toThrow();
+    expect(() => parseJstDateTime('')).toThrow();
   });
 });

@@ -9,6 +9,8 @@ function makeClient(userRows: string[][]): SheetsClient {
     batchUpdateValues: vi.fn(async () => {}),
     appendValues: vi.fn(async () => {}),
     ensureSheetWithHeader: vi.fn(async () => {}),
+    listSheetNames: vi.fn(async () => []),
+    ensureSheetCopiedFrom: vi.fn(async () => {}),
   };
 }
 
