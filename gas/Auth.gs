@@ -239,7 +239,7 @@ function sessionKey_(token) {
 // このシートはサーバー側でのみ読まれ、クライアントには名前しか渡らない。
 
 /** ユーザー情報を保持するスプレッドシート。 */
-var USERS_SPREADSHEET_ID = '1P3nX1XmpVqBLCB-BVgOGWG_U6a6vSr58YXeesvDvs68';
+var USERS_SPREADSHEET_ID = '1wMNwaPobjjov3orYkEpuoaqEx6YC3BSBHLBGZFukb6o';
 var USERS_SHEET_NAME = 'users';
 
 var COLUMN_NAME = 'name';

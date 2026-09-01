@@ -140,7 +140,7 @@ docker compose run --rm clasp push
 ユーザー情報は**スプレッドシートの `users` シート**で管理する。
 コードやスクリプトプロパティを触る必要はなく、シートを編集するだけでよい。
 
-[対象スプレッドシート](https://docs.google.com/spreadsheets/d/1P3nX1XmpVqBLCB-BVgOGWG_U6a6vSr58YXeesvDvs68/edit)
+[対象スプレッドシート](https://docs.google.com/spreadsheets/d/1wMNwaPobjjov3orYkEpuoaqEx6YC3BSBHLBGZFukb6o/edit)
 
 | id | name | password | role |
 |---|---|---|---|
