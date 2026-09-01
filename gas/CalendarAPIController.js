@@ -69,11 +69,24 @@ class CalendarAPIController{
    * 集計の所定労働時間が過大になる。
    */
   getEvents(years){
+    let range = this._yearRange(years);
+
+    // CalendarApp は複数年・複数カレンダーぶんを読むと特に遅いうえ、
+    // 祝日・会社の休日はめったに変わらないのでキャッシュする。
+    // mock 使用時はテストの結果と混ざらないようキャッシュを経由しない。
+    let cache = this._useMock ? null : CacheService.getScriptCache();
+    let cacheKey = 'events:' + range.start + '-' + range.end;
+    if(cache){
+      let cached = cache.get(cacheKey);
+      if(cached){
+        return cached;
+      }
+    }
+
     console.log('getEvents');
     let calendars = this._getCalendars();
     let events = []
 
-    let range = this._yearRange(years);
     let startDate = new Date(range.start, 0, 1);
     let endDate = new Date(range.end + 1, 0, 1);
     console.log('calendar range: ' + range.start + ' - ' + range.end);
@@ -85,7 +98,7 @@ class CalendarAPIController{
       //console.log(result);
       events = events.concat(result);
     }
-    
+
     let dates = [];
     for(let i=0; i<events.length; ++i){
       let event = events[i];
@@ -94,7 +107,13 @@ class CalendarAPIController{
       dates.push(data);
     }
 
-    return JSON.stringify(dates);
+    let json = JSON.stringify(dates);
+
+    // CacheService の1エントリは100KBまで。超える場合はキャッシュを諦める。
+    if(cache && json.length < 100000){
+      cache.put(cacheKey, json, 3600);
+    }
+    return json;
   }
 }
 

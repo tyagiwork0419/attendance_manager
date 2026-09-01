@@ -159,16 +159,33 @@ class SpreadSheetAPIController {
     return nextId;
   }
 
+  /**
+   * ファイル名（年）からスプレッドシートIDを引く。
+   *
+   * DriveApp のフォルダ内検索は打刻のたびに毎回走ると体感速度に直結する
+   * ほど遅いため、結果をキャッシュする。ファイル名とIDの対応は一度でき
+   * たらまず変わらないので、CacheService の上限いっぱい（6時間）残す。
+   */
   _getSheetID(folderId, fileName) {
+    let cache = CacheService.getScriptCache();
+    let cacheKey = 'sheetId:' + folderId + ':' + fileName;
+    let cached = cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     let folder = DriveApp.getFolderById(folderId);
     let files = folder.getFilesByName(fileName);
 
+    let id;
     if (!files.hasNext()) {
       let file = this._createFileFromTemplate(fileName);
-      return file.getId();
+      id = file.getId();
+    } else {
+      id = files.next().getId();
     }
 
-    let id = files.next().getId();
+    cache.put(cacheKey, id, 21600);
     return id;
   }
 
@@ -247,6 +264,13 @@ class SpreadSheetAPIController {
    * _getSheetID がテンプレートから空ファイルを作ってしまうのを防げる。
    */
   listYears() {
+    let cache = CacheService.getScriptCache();
+    let cacheKey = 'listYears';
+    let cached = cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     let folder = DriveApp.getFolderById(FOLDER_ID);
     let files = folder.getFiles();
 
@@ -266,7 +290,12 @@ class SpreadSheetAPIController {
       return a - b;
     });
 
-    return JSON.stringify(years);
+    let result = JSON.stringify(years);
+
+    // フォルダ全体の一覧取得も遅いのでキャッシュする。新しい年のファイルが
+    // できても、この秒数だけ一覧への反映が遅れる（短めにして影響を抑える）。
+    cache.put(cacheKey, result, 300);
+    return result;
   }
 
   /**
