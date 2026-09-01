@@ -25,7 +25,6 @@ class DeviceRegistrationPage extends StatefulWidget {
 
 class _DeviceRegistrationPageState extends State<DeviceRegistrationPage> {
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _labelController = TextEditingController();
 
   List<String> _userNames = [];
   String? _selectedName;
@@ -44,7 +43,6 @@ class _DeviceRegistrationPageState extends State<DeviceRegistrationPage> {
   @override
   void dispose() {
     _passwordController.dispose();
-    _labelController.dispose();
     super.dispose();
   }
 
@@ -84,7 +82,7 @@ class _DeviceRegistrationPageState extends State<DeviceRegistrationPage> {
       final bool ok = await widget.attendanceService.registerDevice(
         _selectedName!,
         _passwordController.text,
-        label: _labelController.text.trim(),
+        label: '',
         shared: _shared,
       );
 
@@ -183,18 +181,6 @@ class _DeviceRegistrationPageState extends State<DeviceRegistrationPage> {
           decoration: const InputDecoration(labelText: 'パスワード'),
           maxLines: 1,
           onSubmitted: (_) => _submit(),
-        ),
-      ),
-      Padding(
-        padding: Constants.topBottomPadding,
-        child: TextField(
-          controller: _labelController,
-          enabled: !_isSubmitting,
-          decoration: const InputDecoration(
-            labelText: '端末の名前（任意）',
-            hintText: '例: 事務所PC、八木のiPhone',
-          ),
-          maxLines: 1,
         ),
       ),
       CheckboxListTile(
