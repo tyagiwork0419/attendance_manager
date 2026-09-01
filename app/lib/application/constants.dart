@@ -3,17 +3,18 @@ import 'package:flutter/material.dart';
 class Constants {
   //const Constants();
 
-  static const String version = '0.0.40';
+  static const String version = '0.0.41';
 
-  /// GAS Web アプリのエンドポイント。
+  /// バックエンドのエンドポイント（Vercel Functions。旧GAS Web アプリから移行済み）。
   ///
   /// Web ビルドの成果物はすべてブラウザに配信されるため、ここには秘密情報を
-  /// 置けない。認証情報は GAS 側（所有者権限で実行）が保持し、クライアントは
+  /// 置けない。認証情報はサーバー側（サービスアカウント）が保持し、クライアントは
   /// ログインで得たセッショントークンのみを扱う。
-  /// デプロイ手順は gas/README.md を参照。
+  /// セットアップ手順は server/README.md を参照。旧GASのデプロイは切り戻し用に
+  /// 残っている（docs/adr/0001-execution-layer-migration.md 参照）。
   static const String webAppUrl = String.fromEnvironment(
     'GAS_WEB_APP_URL',
-    defaultValue: 'https://script.google.com/macros/s/AKfycbzy4_kA6lUQNC2lGSVi8eCNp1kDx4Tpwpg6kSUVvLY6pB68pYAxaT45exapgXdAiTW6/exec',
+    defaultValue: 'https://attendance-manager-backend-kappa.vercel.app/api/exec',
   );
 
   static const double paddingMiddium = 10;
